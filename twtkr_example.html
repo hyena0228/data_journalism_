@@ -1,0 +1,2461 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<link rel="stylesheet" type="text/css" href="/css/tweets.css?ver=20100312" />	
+<!-- 토론 만들기 -->
+<link href="/css/default.css" rel="stylesheet" type="text/css" />
+<!-- jquery 달력 -->
+<link href="/css/jquery-ui-1.7.3.custom.css" rel="stylesheet" type="text/css" /><link href="http://i.dreamwiz.com/img/twtkr/img/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+<title>twtkr 디렉토리</title>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="/js/prototype-1.6.0.2.js"></script>
+<script type="text/javascript" src="/js/twitter.js?20110615_1"></script>
+<script type="text/javascript" src="/js/lists.js?20110615"></script>
+<script type="text/javascript" src="/js/service.js?20110615"></script>
+<script type="text/javascript" src="/js/facebook.js?20110615"></script>
+<script type="text/javascript" src="/js/user.js?20110615"></script>
+<script type="text/javascript" src="/js/jquery.js?20110615"></script>
+<script type="text/javascript" src="/js/biz.js?20110713"></script>
+<script type="text/javascript" src="/js/premium.js"></script>
+<script type="text/javascript" src="/js/premium_select.js"></script>
+<!-- 토론 만들기 -->
+<script type="text/javascript" src="/js/HuskyEZCreator.js"></script>
+<!-- jquery 달력 -->
+<script type="text/javascript" src="/js/jquery-ui-1.7.3.custom.min.js"></script>
+
+<script type="text/javascript">
+    //<![CDATA[
+		$jquery = jQuery.noConflict();
+    //]]>
+</script>
+
+<script type="text/javascript">
+
+function openWin(url){
+	window.open(url);}
+
+/* 2010-08-31 최동호 수정 */
+/* 2010-08-31 최동호 수정 */
+function topButton(){
+	var a = document.getElementById("topButton");
+	var ug = navigator.userAgent;	
+	var ie6 =null;
+	if (IE8() == -1){
+		if ((ug.indexOf('MSIE 6')>0) && (ug.indexOf('MSIE 7')==-1)){
+			ie6 = true;
+		}
+	}
+	a.style.position = "fixed";
+	btn_pos = document.documentElement.clientHeight * 0.7;	//화면높이의 70%위치
+	a.style.top = btn_pos+"px";
+	if (ie6 == true){
+		a.style.position="absolute";
+		a.style.top=btn_pos+(document.documentElement.scrollTop + document.body.scrollTop)+"px";
+		document.getElementsByTagName('html')[0].onscroll = function(){
+			a.style.top =btn_pos+(document.documentElement.scrollTop + document.body.scrollTop)+"px";
+		}
+	}
+
+
+
+
+
+}
+/* 2010-08-31 최동호 수정 끝 */
+
+//글쓰기 check
+var isLongAlarm = false;			//긴글 알림창용
+function updateCheck(e){
+
+	getScreenNames("contents");
+
+	 //d 스페이스 칠때 dm으로
+	if(document.getElementById("contents").value == "d "){
+		document.getElementById("contents").value = "";
+		document.getElementById("dmTweet").style.display = "";
+		document.getElementById('pollTweet').style.display = "none";
+		document.getElementById("writeTweet").style.display = "none";
+		document.getElementById("toMessage").focus();
+		document.getElementById("toMessage").value = document.getElementById("toMessage").value;
+	}
+
+	var textLength = 0;
+	textLength = tweetCount(document.getElementById("contents"));
+
+	
+	//맞춤법 textarea에 넣기
+	if(document.getElementById("data")){
+		document.getElementById("data").value = document.getElementById("contents").value;
+	}
+
+		//if(document.getElementById("contents").value.length <= 140){
+		if(textLength >= 0){
+			
+			if(textLength >= 20){
+				document.getElementById("textcount").className = "a";
+			}else if (textLength > 9 && textLength < 20){
+				document.getElementById("textcount").className = "b";
+			}else{
+				document.getElementById("textcount").className = "c";	
+			}	
+			document.getElementById("textcount").innerHTML = textLength;
+			document.twForm.isLongText.value="false";   
+			document.getElementById("btn_update_status").disabled = false; 	
+			isLongAlarm = false;
+			closePopMessage();
+
+			if(!$("checkEnterUpdate") || !e){
+		    	enterCheck();
+		    	return;
+		    }
+		    
+		    if($("checkEnterUpdate").checked){
+		    	if(document.all)
+		    		key = event.keyCode;
+			    else
+			    	key = e.which;
+			    
+		    	if(key == 13){
+			    	//alert("enter");
+		    		$('btn_update_status').blur();
+			    	updateStatus();
+			    }
+		    }
+			
+			
+		}else{    	
+		
+			longPopMessage('140자 초과되었습니다. 긴 글 등록을 원하시면 설정에서 긴글사용으로 변경하시면 됩니다.');    	
+		
+			document.twForm.isLongText.value="false";			
+			document.getElementById("btn_update_status").disabled = true;
+			document.getElementById("textcount").className = "c";
+			document.getElementById("textcount").innerHTML = 140 + Math.abs(textLength);
+		}
+}
+
+//레이어 글쓰기 check
+var textLengthLayer;
+function updateCheckLayer(status_id, e){
+
+	getScreenNames("contentsLayer_"+status_id);
+	
+	var textLengthLayer = 0;
+	textLengthLayer = tweetCount(document.getElementById("contentsLayer_"+status_id)); 
+
+	
+	var objClose = document.getElementById("btn_update_layer_"+status_id);
+	
+	/*
+	document.getElementById("contentsLayer_"+status_id).onkeyup = function(){
+		
+		if (objClose)
+		{
+			objClose.focus();
+		}
+	}
+	*/
+    //맞춤법 textarea에 넣기
+	document.getElementById("data").value = document.getElementById("contentsLayer_"+status_id).value;
+
+	   
+		if(textLengthLayer >= 0){
+			
+			if(textLengthLayer >= 20){
+				document.getElementById("textcountLayer_"+status_id).className = "tf2_1";
+			}else if (textLengthLayer > 9 && textLengthLayer < 20){
+				document.getElementById("textcountLayer_"+status_id).className = "tf2_2";
+			}else{
+				document.getElementById("textcountLayer_"+status_id).className = "tf2_3";	
+			}	
+			document.getElementById("textcountLayer_"+status_id).innerHTML = textLengthLayer;			
+			document.getElementById("tweetForm_"+status_id).isLongText.value="false";   	
+			document.getElementById("btn_update_layer_"+status_id).disabled = false;
+			isLongAlarm = false;
+			closePopMessage();
+
+			if(document.all)
+				if(!$("checkEnterUpdate") || !event){return;}
+			else
+				if(!$("checkEnterUpdate") || !e){return;}	
+			
+			if($("checkEnterUpdate").checked){
+				if(document.all)
+					key = event.keyCode;
+			    else
+			    	key = e.which;
+			    
+				if(key == 13){
+			    	//alert("enter");    	
+					$('btn_update_layer_'+status_id).blur();
+					updateLayerStatus(status_id, $('btn_update_layer_'+status_id));
+			    }
+			}			
+			
+		}else{
+		
+			longPopMessage('140자 초과되었습니다. 긴 글 등록을 원하시면 설정에서 긴글사용으로 변경하시면 됩니다.');    
+		
+			document.getElementById("tweetForm_"+status_id).isLongText.value="false";
+			document.getElementById("btn_update_layer_"+status_id).disabled = true;
+			document.getElementById("textcountLayer_"+status_id).className = "tf2_3";			
+			document.getElementById("textcountLayer_"+status_id).innerHTML = 140 + Math.abs(textLengthLayer);
+		}	
+			
+
+
+}
+var mention_arr = "";
+
+
+
+</script><script type="text/javascript" src="js/setting.js?ver=20100407"></script>
+<script src="http://platform.twitter.com/anywhere.js?id=lLDFd9bfDQ9LxjGsqEvNgg&v=1" type="text/javascript"></script>
+<link rel="stylesheet" media="screen" type="text/css" href="/css/colorpicker.css" />
+<link rel="stylesheet" media="screen" type="text/css" href="/css/layout.css" />
+<style type="text/css">
+			body{color: #666666; background: #ECECEC url('http://i.dreamwiz.com/img/twtkr/skin/bg_body01_b.jpg') fixed   no-repeat  top  left ;}
+	
+	
+/* 2010-08-31 최동호 수정 */
+		/* menu 가 양쪽으로 나올경우 */
+
+			#window{float: left;}
+			#window_follow{float: left;}
+			#sidebar2 {float:left;}
+			#sidebar {float:right;}
+
+
+		
+		#tkContainer {width:961px}		
+		#header {width:961px;}
+        #container   {width:961px;}
+        #footer {width:961px;}
+
+/* 3단 메뉴 메인일경우 */
+
+	a:link, a:visited, a:active , .qr_code div p{color: #2686BA;}	
+    .ad_form01 .ad_screen_name td{color: #2686BA !important;}	
+	span.line{background-color: #C2DFEE;}	
+	.link_color{font-size:12px; padding-right:3px; color: #666666;}
+	div.my_profile p span.my_profile_name a, div.my_info p a em{color: #666666;} 
+		.promotion span {color:#2686BA;}
+	.search p label{color: #2686BA;}
+	
+	
+
+/* 사이드메뉴폰트 */		
+
+/* 본문 폰트 */
+
+	
+/* 본문크기 (대0,중1,소2) */
+	
+	.stream_item ,.trans_text ,.rt_replay_form textarea ,.main_header .textarea textarea{font-size:15px;line-height:19px;}  /* 중 */
+	
+
+/* 행간 조절 */
+/* .stream_item ,.trans_text ,.rt_replay_form textarea  {line-height:px;} */
+
+
+/* 2010-06-03 최동호 수정 끝 */
+</style>
+<script type="text/javascript">
+function follow_user(user_id)
+{
+	if(confirm('로그인 후 이용가능하십니다. 로그인 하시겠습니까?')){
+            location.href='/login.php?ret_url=%2Ffpl.php';
+    }
+}
+</script>
+</head>
+
+<body id="bodybg">
+	<!-- # tkContainer -->
+	<div id="tkContainer">
+		<!-- ## header -->
+		<div id="header">
+			<!-- ### logo -->
+			<div id="logo">
+				<a href="http://twtkr.olleh.com"><img src="http://i.dreamwiz.com/img/twtkr/logo/logo.png" alt="twtkr" /></a>
+				<a href="http://twtkr.olleh.com/find_people.php" class="sub_logo"><img src="http://i.dreamwiz.com/img/twtkr/logo/logo_people.png" alt="twtkr" class="find_people" /></a>
+			</div>
+			<!-- // ### logo -->
+			<hr />
+			<!-- ### navigator -->
+						<div id="navigator">
+				<h2 class="hide">트위터메뉴</h2>
+				<ul>			
+			
+					<li class="first"><a href="http://twtkr.olleh.com">홈</a></li>
+							
+
+					<li class="mobile_check"><a href="http://twtkr.olleh.com/search.php" >검색</a></li>                    
+					<li ><a href="/find_people.php" >디렉토리</a></li>
+					<li><a href="/event.php">이벤트</a></li>     
+					<li><a href="http://moim-twtkr.olleh.com">모임</a></li>                    
+					<li><a href="http://m-twtkr.olleh.com">장터</a></li>
+					<li><a href="/town.php" >동네</a></li>	
+					<li class="mobile_check"><a href="/tools.php" >도구</a></li>	
+					<li class="mobile_check"><a href="/login.php?ret_url=http://twtkr.olleh.com/setting.php">설정</a></li>	
+					<li><a href="/help.php" >도움말</a></li>
+		
+	 		<li class="mobile_check"><a href="/login.php?ret_url=http://twtkr.olleh.com/fpl.php?d=3_1&s=&p=1">로그인</a></li>
+	
+					
+				</ul>
+			</div>
+			<!-- // ### navigator -->
+		</div>
+		<!-- // ## header -->
+		<hr />
+		<!-- ## container -->
+		<div id="container">
+<div id="sidebar2">
+				<div class="lnb_form">
+    				<div class="top_round_grid"></div>
+    				<div class="mid_line_grid">
+        				<h2 class="menu_title dir"><span>순위 디렉토리</span></h2>
+        				<ul class="menu_type8" id="allCategory">
+							<li><a href="fpl.php?d=r&amp;n=">전체</a></li>
+							<li><a href="fpl.php?n=">전체(연예인 제외)</a></li>
+							<li><a href="fpl.php?d=2&amp;n=">연예인(아이돌)</a></li>
+                            <li class="off" id="sub_1">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=1&amp;n=">연예인</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=1_1&amp;n=">연기/영화</a></li>
+                                    <li><a href="fpl.php?d=1_2&amp;n=">가수/음악</a></li>
+                                    <li><a href="fpl.php?d=1_3&amp;n=">코미디언/개그맨</a></li>
+                                    <li><a href="fpl.php?d=1_4&amp;n=">방송/예능</a></li>
+                                    <li><a href="fpl.php?d=1_9&amp;n=">성우</a></li>
+                                    <li><a href="fpl.php?d=1_5&amp;n=">모델</a></li>
+                                    <li><a href="fpl.php?d=1_6&amp;n=">연예인 가족/관계자</a></li>
+                                    <li><a href="fpl.php?d=1_7&amp;n=">마술사</a></li>
+                                    <li><a href="fpl.php?d=1_8&amp;n=">레이싱모델</a></li>
+                                    <li><a href="fpl.php?d=1_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_12">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=12&amp;n=">스포츠</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=12_1&amp;n=">야구</a></li>
+                                    <li><a href="fpl.php?d=12_2&amp;n=">축구</a></li>
+                                    <li><a href="fpl.php?d=12_3&amp;n=">골프</a></li>
+                                    <li><a href="fpl.php?d=12_4&amp;n=">빙상</a></li>
+                                    <li><a href="fpl.php?d=12_5&amp;n=">농구</a></li>
+                                    <li><a href="fpl.php?d=12_6&amp;n=">배구</a></li>
+                                    <li><a href="fpl.php?d=12_7&amp;n=">대회</a></li>
+                                    <li><a href="fpl.php?d=12_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_3">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=3&amp;n=">정치인/공직자</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=3_1&amp;n=">정치인</a></li>
+                                    <li><a href="fpl.php?d=3_2&amp;n=">국무총리/장·차관</a></li>
+                                    <li><a href="fpl.php?d=3_3&amp;n=">광역단체장</a></li>
+                                    <li><a href="fpl.php?d=3_4&amp;n=">기초자치단체장</a></li>
+                                    <li><a href="fpl.php?d=3_5&amp;n=">지방자치단체의원</a></li>
+                                    <li><a href="fpl.php?d=3_6&amp;n=">교육감</a></li>
+                                    <li><a href="fpl.php?d=3_7&amp;n=">공공기관장</a></li>
+                                    <li><a href="fpl.php?d=3_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+							<li><a href="fpl.php?d=5&amp;n=">기업인/CEO</a></li>
+                            <li class="off" id="sub_11">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=11&amp;n=">전문가</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=11_1&amp;n=">IT</a></li>
+                                    <li><a href="fpl.php?d=11_2&amp;n=">법률</a></li>
+                                    <li><a href="fpl.php?d=11_3&amp;n=">의료</a></li>
+                                    <li><a href="fpl.php?d=11_4&amp;n=">금융</a></li>
+                                    <li><a href="fpl.php?d=11_5&amp;n=">홍보/마케팅</a></li>
+                                    <li><a href="fpl.php?d=11_6&amp;n=">경영/경제</a></li>
+                                    <li><a href="fpl.php?d=11_7&amp;n=">커뮤니케이션</a></li>
+                                    <li><a href="fpl.php?d=11_8&amp;n=">외국어교육</a></li>
+                                    <li><a href="fpl.php?d=11_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_4">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=4&amp;n=">미디어</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=4_1&amp;n=">방송</a></li>
+                                    <li><a href="fpl.php?d=4_7&amp;n=">방송PD</a></li>
+                                    <li><a href="fpl.php?d=4_4&amp;n=">방송기자</a></li>
+                                    <li><a href="fpl.php?d=4_3&amp;n=">앵커/아나운서</a></li>
+                                    <li><a href="fpl.php?d=4_8&amp;n=">기상캐스터</a></li>
+                                    <li><a href="fpl.php?d=4_2&amp;n=">신문/잡지</a></li>
+                                    <li><a href="fpl.php?d=4_5&amp;n=">신문/잡지 기자</a></li>
+                                    <li><a href="fpl.php?d=4_6&amp;n=">개인미디어</a></li>
+                                    <li><a href="fpl.php?d=4_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_6">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=6&amp;n=">기업</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=6_1&amp;n=">인터넷/IT</a></li>
+                                    <li><a href="fpl.php?d=6_2&amp;n=">통신</a></li>
+                                    <li><a href="fpl.php?d=6_3&amp;n=">전기/전자</a></li>
+                                    <li><a href="fpl.php?d=6_4&amp;n=">금융/보험</a></li>
+                                    <li><a href="fpl.php?d=6_19&amp;n=">증권</a></li>
+                                    <li><a href="fpl.php?d=6_5&amp;n=">쇼핑/유통</a></li>
+                                    <li><a href="fpl.php?d=6_6&amp;n=">종합병원</a></li>
+                                    <li><a href="fpl.php?d=6_7&amp;n=">항공/여행사</a></li>
+                                    <li><a href="fpl.php?d=6_8&amp;n=">호텔/콘도</a></li>
+                                    <li><a href="fpl.php?d=6_9&amp;n=">경제연구소</a></li>
+                                    <li><a href="fpl.php?d=6_10&amp;n=">자동차</a></li>
+                                    <li><a href="fpl.php?d=6_11&amp;n=">제약</a></li>
+                                    <li><a href="fpl.php?d=6_12&amp;n=">건설/건축</a></li>
+                                    <li><a href="fpl.php?d=6_13&amp;n=">교육</a></li>
+                                    <li><a href="fpl.php?d=6_14&amp;n=">의류/스포츠</a></li>
+                                    <li><a href="fpl.php?d=6_15&amp;n=">인사/채용</a></li>
+                                    <li><a href="fpl.php?d=6_16&amp;n=">패션</a></li>
+                                    <li><a href="fpl.php?d=6_17&amp;n=">식품/음료</a></li>
+                                    <li><a href="fpl.php?d=6_18&amp;n=">광고/홍보</a></li>
+                                    <li><a href="fpl.php?d=6_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_13">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=13&amp;n=">기관/단체</a>
+                                <ul class="sub_item">
+									<li><a href="fpl.php?d=13_12&amp;n=">정부부처/청</a></li>
+                                    <li><a href="fpl.php?d=13_1&amp;n=">정부기관</a></li>
+                                    <li><a href="fpl.php?d=13_10&amp;n=">선거관리위원회</a></li>
+                                    <li><a href="fpl.php?d=13_11&amp;n=">정당</a></li>
+                                    <li><a href="fpl.php?d=13_7&amp;n=">경찰청</a></li>
+                                    <li><a href="fpl.php?d=13_3&amp;n=">시민단체/NGO</a></li>
+                                    <li><a href="fpl.php?d=13_5&amp;n=">기상정보</a></li>
+                                    <li><a href="fpl.php?d=13_6&amp;n=">교통정보</a></li>
+                                    <li><a href="fpl.php?d=13_9&amp;n=">협회</a></li>
+                                    <li><a href="fpl.php?d=13_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_20">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=20&amp;n=">자치단체</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=20_1&amp;n=">광역자치단체</a></li>
+                                    <li><a href="fpl.php?d=20_2&amp;n=">광역자치단체기관</a></li>
+                                    <li><a href="fpl.php?d=20_3&amp;n=">지자체-서울/인천</a></li>
+                                    <li><a href="fpl.php?d=20_4&amp;n=">지자체-부산/울산/경남</a></li>
+                                    <li><a href="fpl.php?d=20_5&amp;n=">지자체-대구/경북</a></li>
+                                    <li><a href="fpl.php?d=20_6&amp;n=">지자체-대전/충남/충북</a></li>
+                                    <li><a href="fpl.php?d=20_7&amp;n=">지자체-광주/전남/전북</a></li>
+                                    <li><a href="fpl.php?d=20_8&amp;n=">지자체-경기도</a></li>
+                                    <li><a href="fpl.php?d=20_9&amp;n=">지자체-강원도</a></li>
+                                    <li><a href="fpl.php?d=20_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_19">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=19&amp;n=">학교/대학교</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=19_1&amp;n=">대학/대학교</a></li>
+                                    <li><a href="fpl.php?d=19_2&amp;n=">총장/교장</a></li>
+                                    <li><a href="fpl.php?d=19_3&amp;n=">교수/교사</a></li>
+                                    <li><a href="fpl.php?d=19_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_14">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=14&amp;n=">작가/출판사</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=14_1&amp;n=">소설가</a></li>
+                                    <li><a href="fpl.php?d=14_2&amp;n=">만화가</a></li>
+                                    <li><a href="fpl.php?d=14_3&amp;n=">방송작가</a></li>
+                                    <li><a href="fpl.php?d=14_4&amp;n=">웹툰작가</a></li>
+                                    <li><a href="fpl.php?d=14_5&amp;n=">시인</a></li>
+                                    <li><a href="fpl.php?d=14_6&amp;n=">평론가</a></li>
+                                    <li><a href="fpl.php?d=14_7&amp;n=">출판사</a></li>
+                                    <li><a href="fpl.php?d=14_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_15">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=15&amp;n=">엔터테인먼트</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=15_1&amp;n=">영화감독</a></li>
+                                    <li><a href="fpl.php?d=15_2&amp;n=">영화배급사</a></li>
+                                    <li><a href="fpl.php?d=15_3&amp;n=">영화제작사</a></li>
+                                    <li><a href="fpl.php?d=15_4&amp;n=">공연/영화관</a></li>
+                                    <li><a href="fpl.php?d=15_5&amp;n=">영화별</a></li>
+                                    <li><a href="fpl.php?d=15_10&amp;n=">영화제</a></li>
+                                    <li><a href="fpl.php?d=15_6&amp;n=">연예기획사</a></li>
+                                    <li><a href="fpl.php?d=15_7&amp;n=">음악방송</a></li>
+                                    <li><a href="fpl.php?d=15_8&amp;n=">게임</a></li>
+                                    <li><a href="fpl.php?d=15_9&amp;n=">프로게이머</a></li>
+                                    <li><a href="fpl.php?d=15_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_16">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=16&amp;n=">생활/문화서비스</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=16_1&amp;n=">한의원</a></li>
+                                    <li><a href="fpl.php?d=16_2&amp;n=">치과</a></li>
+                                    <li><a href="fpl.php?d=16_3&amp;n=">안과</a></li>
+                                    <li><a href="fpl.php?d=16_4&amp;n=">피부과</a></li>
+                                    <li><a href="fpl.php?d=16_8&amp;n=">성형외과</a></li>
+                                    <li><a href="fpl.php?d=16_5&amp;n=">꽃배달</a></li>
+                                    <li><a href="fpl.php?d=16_6&amp;n=">부동산</a></li>
+                                    <li><a href="fpl.php?d=16_7&amp;n=">음식점</a></li>
+                                    <li><a href="fpl.php?d=16_9&amp;n=">테마파크</a></li>
+                                    <li><a href="fpl.php?d=16_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_17">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=17&amp;n=">개인전문사업</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=17_1&amp;n=">파이낸셜컨설턴트</a></li>
+                                    <li><a href="fpl.php?d=17_2&amp;n=">라이프플래너</a></li>
+                                    <li><a href="fpl.php?d=17_3&amp;n=">프라이빗뱅킹</a></li>
+                                    <li><a href="fpl.php?d=17_4&amp;n=">증권거래인</a></li>
+                                    <li><a href="fpl.php?d=17_5&amp;n=">카딜러</a></li>
+                                    <li><a href="fpl.php?d=17_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_18">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=18&amp;n=">종교/종교인</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=18_1&amp;n=">목사</a></li>
+                                    <li><a href="fpl.php?d=18_2&amp;n=">승려</a></li>
+                                    <li><a href="fpl.php?d=18_3&amp;n=">신부</a></li>
+                                    <li><a href="fpl.php?d=18_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+                            <li class="off" id="sub_10">
+                                <button type="button">하위</button>
+                                <a href="fpl.php?d=10&amp;n=">팬클럽/커뮤니티</a>
+                                <ul class="sub_item">
+                                    <li><a href="fpl.php?d=10_1&amp;n=">연예인</a></li>
+                                    <li><a href="fpl.php?d=10_2&amp;n=">아이돌</a></li>
+                                    <li><a href="fpl.php?d=10_3&amp;n=">스포츠</a></li>
+                                    <li><a href="fpl.php?d=10_4&amp;n=">친목 커뮤니티</a></li>
+                                    <li><a href="fpl.php?d=10_5&amp;n=">정보 커뮤니티</a></li>
+                                    <li><a href="fpl.php?d=10_none&amp;n=">기타</a></li>
+                                </ul>
+                            </li>
+							<li><a href="fpl.php?d=7&amp;n=">트위터 서비스</a></li>
+							<li><a href="fpl.php?d=9&amp;n=">인기/유명 트위터</a></li>
+							<li><a href="fpl.php?d=8&amp;n=">활동 많은 트위터</a></li>
+						</ul>
+                         <script type="text/javascript">
+                        //<![CDATA[
+                              function menuDir(){
+                                    if (!$('allCategory')){return false}
+                                    if (!$('allCategory').getElementsByTagName('button') ){return false}
+                                    var btn = $('allCategory').getElementsByTagName('button');
+                                    for (var i=0;i <btn.length;i++ ){
+                                        btn[i].onclick = function(){
+                                            if (this.parentNode.className.indexOf("off") == 0){
+                                                this.parentNode.className ="on";
+                                            }
+                                            else{
+                                                this.parentNode.className ="off";
+                                            }
+                                        }
+                                     }
+                                }
+                              menuDir();
+								function set_sub_dir(d_value)
+								{
+									var obj = document.getElementById("sub_" + d_value);
+									if (obj == null)
+										return;
+
+									obj.className ="on";
+								}
+set_sub_dir("3");
+                        //]]>
+                        </script>
+                        <div class="powered02" style="display:block;"><a href="http://www.olleh.com/" onMouseDown="eval('try{ trk_clickTrace( \'EVT\', \'^twtkr^powered_by_olleh\' ); }catch(_e){ }');" target="_blank"><img src='http://i.dreamwiz.com/img/twtkr/logo/olleh.png'/></a></div>
+					</div>
+					<div class="btn_round_grid"></div>
+				</div>
+				<div class="ranking_category">
+					<ul class="category" id="categoryTab">
+						<li class="on"><a href="#none">포인트</a></li>
+						<li class="off"><a href="#none">팔로워</a></li>
+						<li class="off"><a href="#none">리스트됨</a></li>
+					</ul>
+<div class="tab_secton" id="tab_0" style="display:block;">
+<ol>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n01.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('siwon407','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2510054928/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>최시원</cite>
+<p><a href="/siwon407">@siwon40..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n02.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('donghae861015','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1748394726/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이동해</cite>
+<p><a href="/donghae861015">@donghae..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n03.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('special1004','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2332764683/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이특</cite>
+<p><a href="/special1004">@special..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n04.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('shfly3424','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2697865212/e5e6652721ca1ee7d7cf4012c6306570_normal.jpeg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>예성</cite>
+<p><a href="/shfly3424">@shfly34..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n05.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('oisoo','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2693607770/972f99a1ef9928a857a937402685368e_normal.png" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이외수</cite>
+<p><a href="/oisoo">@oisoo</a></p>
+</div>
+</li>
+ 
+</ol>
+<a href="fpl.php?d=r" class="more_view">더보기</a>
+</div>
+<div class="tab_secton" id="tab_1" style="display:none;">
+<ol>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n01.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('siwon407','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2510054928/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>최시원</cite>
+<p><a href="/siwon407">@siwon40..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n02.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('donghae861015','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1748394726/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이동해</cite>
+<p><a href="/donghae861015">@donghae..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n03.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('special1004','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2332764683/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이특</cite>
+<p><a href="/special1004">@special..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n04.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('shfly3424','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2697865212/e5e6652721ca1ee7d7cf4012c6306570_normal.jpeg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>예성</cite>
+<p><a href="/shfly3424">@shfly34..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n05.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('Khunnie0624','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2506930744/rzygd5icerrl1qjcafck_normal.jpeg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>닉쿤</cite>
+<p><a href="/Khunnie0624">@Khunnie..</a></p>
+</div>
+</li>
+ 
+</ol>
+<a href="fpl.php?d=r&s=f" class="more_view">더보기</a>
+</div>
+<div class="tab_secton" id="tab_2" style="display:none;">
+<ol>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n01.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('oisoo','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2693607770/972f99a1ef9928a857a937402685368e_normal.png" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이외수</cite>
+<p><a href="/oisoo">@oisoo</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n02.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('donghae861015','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1748394726/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이동해</cite>
+<p><a href="/donghae861015">@donghae..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n03.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('siwon407','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2510054928/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>최시원</cite>
+<p><a href="/siwon407">@siwon40..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n04.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('special1004','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2332764683/image_normal.jpg" alt="" class="avatar" /></a>
+<div class="article">
+<cite>이특</cite>
+<p><a href="/special1004">@special..</a></p>
+</div>
+</li>
+
+<li>
+<img src="http://i.dreamwiz.com/img/twtkr/people/txt_n05.gif" class="num"  alt="" />
+<a href="#" onclick="openLayer('AllRiseSilver','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1979538525/6oS1XoBC_normal" alt="" class="avatar" /></a>
+<div class="article">
+<cite>은혁</cite>
+<p><a href="/AllRiseSilver">@AllRise..</a></p>
+</div>
+</li>
+ 
+</ol>
+<a href="fpl.php?d=r&s=l" class="more_view">더보기</a>
+</div>
+				</div>
+<script type="text/javascript">
+//<![CDATA[
+categoryTab();
+//]]>
+</script></div>
+
+			<!-- ### window -->
+			<div id="window">
+				<!-- 사람찾기 검색 창 -->
+				<script type="text/javascript" src="/find_people/fp_search_box.js"></script>
+				<div class="people" >
+					<fieldset id="oriFindWindow"  class="search_form">
+						<legend>사람 찾기</legend>
+							<form action="javascript:find_people();" name="findPeopleFrm">
+							<div class="input_search">
+								<input type="text" id="find_id" name="find_id"  class="input_text" />
+								<input type="image" src="http://i.dreamwiz.com/img/twtkr/btn_people_search.gif" alt="사람찾기"  class="input_image"  />
+							</div>
+							</form>
+					</fieldset>
+					<div id='find_result' class='tatal_ranking'>
+					</div>
+				</div>
+<div style="margin:0 0 20px 0;"></div>
+				<div class="people" id="fp_mid_content">
+					<div class="headgroup">
+						<h2> &nbsp; <span>정치인/공직자 : 정치인 순위 (1,076)</span><strong>포인트</strong></h2>
+						<div class="tatal_category">
+							<ul class="category">
+								<li class="first" style="width:50px;"><a href="/fpl.php?d=3_1&n=20" class="on"><span>포인트</span></a></li>
+								<li style="width:96px;"><a href="/fpl.php?d=3_1&s=n&n=20" ><span>팔로워 - 팔로잉</span></a></li>
+								<li style="width:50px;"><a href="/fpl.php?d=3_1&s=f&n=20" ><span>팔로워</span></a></li>
+								<li style="width:60px;"><a href="/fpl.php?d=3_1&s=l&n=20" ><span>리스트됨</span></a></li>
+								<li style="width:50px;"><a href="/fpl.php?d=3_1&s=w&n=20" ><span>팔로잉</span></a></li>
+								<li class="last" style="width:40px;"><a href="/fpl.php?d=3_1&s=t&n=20" ><span>트윗</span></a></li>
+							</ul>
+							<div class="sort">
+								<p><a href="#none" id="svalue">20명씩 보기</a></p>
+								<div id="soption" class="select_value" style="display:none;">
+									<ul>
+										<li><a href="/fpl.php?d=3_1&s=&n=20">20명씩 보기</a></li>
+										<li><a href="/fpl.php?d=3_1&s=&n=50">50명씩 보기</a></li>
+										<li><a href="/fpl.php?d=3_1&s=&n=100">100명씩 보기</a></li>
+									</ul>
+								</div>
+							</div> 
+						</div>
+						<div class="clear"></div>
+						<script type="text/javascript">
+						//<![CDATA[
+							  LayerSelect();
+						//]]>
+						</script>
+					</div>
+<div class="biz_user">
+	<div class="box">
+<div class="item" id="biz_box_item_0" style="display:none;">
+	<img src="http://a0.twimg.com/profile_images/1186965541/symbol_normal.jpg" class="avatar" alt="">
+	<div class="info">
+		<p class="user_bio"><strong>경북 관광 알림이</strong></p>
+		<p class="screen_nmae"><strong><a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_29_1&save=100&http://twtkr.com/GB_tour" target="_blank" id="twitter_anywhere">@GB_tour</a></strong></p>
+		<div>
+			<button type="button" class="follow" onclick="ams_follow('twtkr_mkt','ams_dz_n_29_2','GB_tour'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_dz_n_29_2&save=100 />'; return false;">팔로우</button>
+			<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_29_1&save=100&http://twtkr.com/GB_tour" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_user_page.gif" alt="바로가기"></a>
+		</div>
+	</div>
+	<div id="biz_box_item_count_0" style="display:none;">http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_dz_n_29_2l</div>
+</div>
+<div class="item" id="biz_box_item_1" style="display:none;">
+	<img src="http://a0.twimg.com/profile_images/1483702614/phpkmHCc6_normal" class="avatar" alt="">
+	<div class="info">
+		<p class="user_bio"><strong>twtkr 마케팅</strong></p>
+		<p class="screen_nmae"><strong><a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_22_1&save=100&http://twtkr.com/twtkr_mkt" target="_blank" id="twitter_anywhere">@twtkr_mkt</a></strong></p>
+		<div>
+			<button type="button" class="follow" onclick="ams_follow('twtkr_mkt','ams_dz_n_22_2','twtkr_mkt'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_dz_n_22_2&save=100 />'; return false;">팔로우</button>
+			<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_22_1&save=100&http://twtkr.com/twtkr_mkt" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_user_page.gif" alt="바로가기"></a>
+		</div>
+	</div>
+	<div id="biz_box_item_count_1" style="display:none;">http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_dz_n_22_2l</div>
+</div>
+<div class="item" id="biz_box_item_2" style="display:none;">
+	<img src="http://a2.twimg.com/profile_images/1317900102/twitter_img_normal.jpg" class="avatar" alt="">
+	<div class="info">
+		<p class="user_bio"><strong>웰빙이</strong></p>
+		<p class="screen_nmae"><strong><a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_21_1&save=100&http://twtkr.com/wellbingi" target="_blank" id="twitter_anywhere">@wellbingi</a></strong></p>
+		<div>
+			<button type="button" class="follow" onclick="ams_follow('twtkr_mkt','ams_dz_n_21_2','wellbingi'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_dz_n_21_2&save=100 />'; return false;">팔로우</button>
+			<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_21_1&save=100&http://twtkr.com/wellbingi" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_user_page.gif" alt="바로가기"></a>
+		</div>
+	</div>
+	<div id="biz_box_item_count_2" style="display:none;">http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_dz_n_21_2l</div>
+</div>
+<div class="item" id="biz_box_item_3" style="display:none;">
+	<img src="http://a0.twimg.com/profile_images/1597651473/php168zj5_normal" class="avatar" alt="">
+	<div class="info">
+		<p class="user_bio"><strong>감동을 주는 여행친구</strong></p>
+		<p class="screen_nmae"><strong><a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_20_1&save=100&http://twtkr.com/webtourlove" target="_blank" id="twitter_anywhere">@webtourlove</a></strong></p>
+		<div>
+			<button type="button" class="follow" onclick="ams_follow('twtkr_mkt','ams_dz_n_20_2','webtourlove'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_dz_n_20_2&save=100 />'; return false;">팔로우</button>
+			<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_dz_n_20_1&save=100&http://twtkr.com/webtourlove" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_user_page.gif" alt="바로가기"></a>
+		</div>
+	</div>
+	<div id="biz_box_item_count_3" style="display:none;">http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_dz_n_20_2l</div>
+</div>
+	</div>
+	<button type="buttton" class="prev" onclick="biz_head_scroll('l');">이전</button>
+	<button type="buttton" class="next" onclick="biz_head_scroll('r');">다음</button>
+	<div class="icon_biz"><img src="http://i.dreamwiz.com/img/twtkr/icon/icon_biz_twtkr.png" alt="" /></div>
+	<div id="biz_count" style="display:none;"></div>
+</div>
+<script type="text/javascript">
+var biz_user_num = 4;
+
+var cur_index = 0;
+
+function init_biz_head()
+{
+	var r_index = Math.round((biz_user_num - 1) * Math.random());
+	if ((r_index % 2) > 0)
+		r_index++;
+	set_biz_box(r_index);
+}
+
+function set_biz_box(index)
+{
+	var left_index = index;
+
+	if (left_index < 0)
+	{
+		left_index = biz_user_num + left_index;
+	}
+	else if (left_index > biz_user_num - 1)
+	{
+		left_index = left_index - biz_user_num;
+	}
+
+	cur_index = left_index;
+
+	var right_index = left_index + 1;
+	if (right_index > biz_user_num - 1)
+		right_index = 0;
+
+	left_obj = document.getElementById("biz_box_item_" + left_index);
+	right_obj = document.getElementById("biz_box_item_" + right_index);
+	
+	document.getElementById('biz_count').innerHTML = "";
+
+	for (i=0; i < biz_user_num ; i++)
+	{
+		box_item_obj = document.getElementById("biz_box_item_" + i);
+		if (i == left_index || i == right_index)
+		{
+			box_item_obj.style.display = "block";
+			document.getElementById('biz_count').innerHTML = document.getElementById('biz_count').innerHTML + "<img src='"+document.getElementById(  'biz_box_item_count_'+String(i)  ).innerHTML+"' border='0' />";
+		}
+		else
+		{
+			box_item_obj.style.display = "none";
+		}
+	}
+}
+function biz_head_scroll(opt)
+{
+	if (opt == "l")
+ 		cur_index -= 2;
+	else if (opt == "r")
+		cur_index += 2;
+
+	set_biz_box(cur_index);
+	
+}
+init_biz_head();
+
+</script>
+					<div class="tatal_ranking">
+
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('u_simin','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/633306634/tweet_bigger.jpg" alt="u_simin" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('102026929');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/u_simin" target='_blank'>유시민</a></cite>
+			<a href="/u_simin" class="url" target='_blank' id='twitter_anywhere'>@u_simin</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />533,403 </span></span>새진보정당추진회의운영위원
+국가란 무엇인가 저자</p>
+	</div>
+	<div class="information">
+		<strong>533,403</strong>
+		<span># 1</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">518,664</span>
+			<span>팔로잉 :</span>
+			<span class="count" >40,966</span>
+			<span>트윗 :</span>
+			<span class="count">1,052</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">17,381</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('BBK_Sniper','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1536045218/2010-12-09_14.52.39-1_bigger.jpg" alt="BBK_Sniper" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('147620164');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/BBK_Sniper" target='_blank'>정봉주</a></cite>
+			<a href="/BBK_Sniper" class="url" target='_blank' id='twitter_anywhere'>@BBK_Sniper</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />390,192 </span></span>신나는 진보의 정치를 꿈꾸는 국민이 주인되는 미래권력들</p>
+	</div>
+	<div class="information">
+		<strong>390,192</strong>
+		<span># 2</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">400,938</span>
+			<span>팔로잉 :</span>
+			<span class="count" >42,992</span>
+			<span>트윗 :</span>
+			<span class="count">1,253</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">9,514</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('funronga','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2046393147/phpv3kHRC_normal" alt="funronga" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('48284537');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/funronga" target='_blank'>김용민</a></cite>
+			<a href="/funronga" class="url" target='_blank' id='twitter_anywhere'>@funronga</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />378,190 </span></span>벙커1 지하에 서식. 나는 음지에서 일하고 양지를 지향한다. 여기서 양지는 쇠고기 부위. </p>
+	</div>
+	<div class="information">
+		<strong>378,190</strong>
+		<span># 3</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">364,652</span>
+			<span>팔로잉 :</span>
+			<span class="count" >20,471</span>
+			<span>트윗 :</span>
+			<span class="count">9,172</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">10,385</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('actormoon','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2611693154/tv5i2gmdttzuaqw3alio_bigger.jpeg" alt="actormoon" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('140370834');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/actormoon" target='_blank'>문성근 (민주당,배우)</a></cite>
+			<a href="/actormoon" class="url" target='_blank' id='twitter_anywhere'>@actormoon</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />242,760 </span></span>2010.8 on+off결합 네트웍정당으로 야권대통합 국민의명령 제안자. 2012.1 민주통합당 건설, 최고위원 당선 2012.4총선 부산 북.강서(을) 당근 낙선! 우헤헤...그래도 마침내 2012.12 정권교체!
+주소창- moonparty.kr</p>
+	</div>
+	<div class="information">
+		<strong>242,760</strong>
+		<span># 4</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">230,006</span>
+			<span>팔로잉 :</span>
+			<span class="count" >14,967</span>
+			<span>트윗 :</span>
+			<span class="count">12,527</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">8,349</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('heenews','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2510423967/8428uan6qc34k7rp139b_bigger.jpeg" alt="heenews" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('104319162');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/heenews" target='_blank'>이정희 (통합진보당)</a></cite>
+			<a href="/heenews" class="url" target='_blank' id='twitter_anywhere'>@heenews</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />231,037 </span></span></p>
+	</div>
+	<div class="information">
+		<strong>231,037</strong>
+		<span># 5</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">213,383</span>
+			<span>팔로잉 :</span>
+			<span class="count" >15,424</span>
+			<span>트윗 :</span>
+			<span class="count">10,132</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">10,193</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('GH_PARK','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1022540429/_______bigger.jpg" alt="GH_PARK" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('134732045');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/GH_PARK" target='_blank'>박근혜 (새누리당)</a></cite>
+			<a href="/GH_PARK" class="url" target='_blank' id='twitter_anywhere'>@GH_PARK</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />226,660 </span></span>새누리당 대통령 후보 박근혜입니다.
+국민 한사람 한사람의 꿈이 이루어지는 100% 대한민국을 만들기 위해 여러분과 함께 하겠습니다.</p>
+	</div>
+	<div class="information">
+		<strong>226,660</strong>
+		<span># 6</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">230,646</span>
+			<span>팔로잉 :</span>
+			<span class="count" >33,566</span>
+			<span>트윗 :</span>
+			<span class="count">422</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">8,863</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('HanMyeongSook','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/946720135/rphoto_1273988254857_bigger.jpg" alt="HanMyeongSook" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('66671841');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/HanMyeongSook" target='_blank'>한명숙 (민주통합당)</a></cite>
+			<a href="/HanMyeongSook" class="url" target='_blank' id='twitter_anywhere'>@HanMyeongSook</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />214,200 </span></span>국회의원 한명숙입니다.</p>
+	</div>
+	<div class="information">
+		<strong>214,200</strong>
+		<span># 7</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">199,818</span>
+			<span>팔로잉 :</span>
+			<span class="count" >9,049</span>
+			<span>트윗 :</span>
+			<span class="count">780</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">7,483</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('moonriver365','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2267959928/phpjUd7Vl_normal" alt="moonriver365" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('444465942');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/moonriver365" target='_blank'>문재인</a></cite>
+			<a href="/moonriver365" class="url" target='_blank' id='twitter_anywhere'>@moonriver365</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />165,345 </span></span>민주통합당 제18대 대한민국 대통령 후보. 
+후원계좌 : 국민/문재인후원회(761201-00-009457), 농협/천경득(302-0572-4946-71), </p>
+	</div>
+	<div class="information">
+		<strong>165,345</strong>
+		<span># 8</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">277,341</span>
+			<span>팔로잉 :</span>
+			<span class="count" >137,713</span>
+			<span>트윗 :</span>
+			<span class="count">1,601</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">6,560</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('sangjungsim','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2326894838/khtclr022euc698ik9m7_bigger.jpeg" alt="sangjungsim" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('27821557');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/sangjungsim" target='_blank'>심상정</a></cite>
+			<a href="/sangjungsim" class="url" target='_blank' id='twitter_anywhere'>@sangjungsim</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />158,478 </span></span>진보정의당 18대 대통령 예비후보. 고양시 덕양갑 19대 국회의원. 덕양 마을학교 이사장. </p>
+	</div>
+	<div class="information">
+		<strong>158,478</strong>
+		<span># 9</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">212,042</span>
+			<span>팔로잉 :</span>
+			<span class="count" >84,331</span>
+			<span>트윗 :</span>
+			<span class="count">4,915</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">8,330</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('your_rights','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2135900034/your_rights_bigger.jpg" alt="your_rights" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('130414213');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/your_rights" target='_blank'>최재천 (민주통합당)</a></cite>
+			<a href="/your_rights" class="url" target='_blank' id='twitter_anywhere'>@your_rights</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />134,077 </span></span>대표되지 못한 자의 대표, 소수파의 대표, 사회적 약자의 대표를 자임합니다. 
+
+최재천의 여의도 일기:
+http://yourrights.tistory.com
+
+
+
+
+</p>
+	</div>
+	<div class="information">
+		<strong>134,077</strong>
+		<span># 10</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">129,459</span>
+			<span>팔로잉 :</span>
+			<span class="count" >18,628</span>
+			<span>트윗 :</span>
+			<span class="count">44,422</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">5,935</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('kangkumsil','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2728485318/457154d32447126a4aedb20c194060cb_bigger.jpeg" alt="kangkumsil" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('148198172');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/kangkumsil" target='_blank'>강금실</a></cite>
+			<a href="/kangkumsil" class="url" target='_blank' id='twitter_anywhere'>@kangkumsil</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />104,254 </span></span>생명과 영성의 정치</p>
+	</div>
+	<div class="information">
+		<strong>104,254</strong>
+		<span># 11</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">96,936</span>
+			<span>팔로잉 :</span>
+			<span class="count" >3,111</span>
+			<span>트윗 :</span>
+			<span class="count">1,047</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">3,338</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('mentshin','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1127567615/12_bigger.jpg" alt="mentshin" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('114439298');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/mentshin" target='_blank'>신경민 (민주당,前앵커)</a></cite>
+			<a href="/mentshin" class="url" target='_blank' id='twitter_anywhere'>@mentshin</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />101,968 </span></span>前 민주통합당 대변인, 前 mbc 앵커</p>
+	</div>
+	<div class="information">
+		<strong>101,968</strong>
+		<span># 12</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">89,701</span>
+			<span>팔로잉 :</span>
+			<span class="count" >225</span>
+			<span>트윗 :</span>
+			<span class="count">1,433</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">4,109</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('kanggigap','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2362201004/1vu82e64ff7sllqpuzlc_bigger.jpeg" alt="kanggigap" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('109490737');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/kanggigap" target='_blank'>강기갑</a></cite>
+			<a href="/kanggigap" class="url" target='_blank' id='twitter_anywhere'>@kanggigap</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />98,808 </span></span>통합진보당 대표 강기갑입니다.</p>
+	</div>
+	<div class="information">
+		<strong>98,808</strong>
+		<span># 13</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">91,956</span>
+			<span>팔로잉 :</span>
+			<span class="count" >8,017</span>
+			<span>트윗 :</span>
+			<span class="count">5,085</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">4,520</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('Nakw','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1577937474/main_img_bigger.jpg" alt="Nakw" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('58969192');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/Nakw" target='_blank'>나경원 (새누리당)</a></cite>
+			<a href="/Nakw" class="url" target='_blank' id='twitter_anywhere'>@Nakw</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />71,510 </span></span></p>
+	</div>
+	<div class="information">
+		<strong>71,510</strong>
+		<span># 14</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">82,377</span>
+			<span>팔로잉 :</span>
+			<span class="count" >22,883</span>
+			<span>트윗 :</span>
+			<span class="count">885</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">3,266</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('Jungwook_Hong','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2685812850/12d8e77b2f433085df5f3dbbbb0b355c_bigger.jpeg" alt="Jungwook_Hong" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('154412632');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/Jungwook_Hong" target='_blank'>홍정욱 (새누리당)</a></cite>
+			<a href="/Jungwook_Hong" class="url" target='_blank' id='twitter_anywhere'>@Jungwook_Hong</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />71,457 </span></span>헤럴드 회장 | 올재지기
+@heraldecofarm | @oljeclassics | @thekoreaherald | @theheraldbiz | @thejuniorherald | @art_day</p>
+	</div>
+	<div class="information">
+		<strong>71,457</strong>
+		<span># 15</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">68,410</span>
+			<span>팔로잉 :</span>
+			<span class="count" >3,992</span>
+			<span>트윗 :</span>
+			<span class="count">644</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">2,192</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('cheolsoo0919','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2719746110/ab01f6e77285c977a60b69bf5c354db2_bigger.jpeg" alt="cheolsoo0919" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('881373588');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/cheolsoo0919" target='_blank'>안철수</a></cite>
+			<a href="/cheolsoo0919" class="url" target='_blank' id='twitter_anywhere'>@cheolsoo0919</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />70,442 </span></span>제18대 대통령선거 예비후보 안철수</p>
+	</div>
+	<div class="information">
+		<strong>70,442</strong>
+		<span># 16</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">78,477</span>
+			<span>팔로잉 :</span>
+			<span class="count" >14,191</span>
+			<span>트윗 :</span>
+			<span class="count">64</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">1,591</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('jwp615','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/2063955189/myProfileImage_bigger.jpg" alt="jwp615" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('169290610');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/jwp615" target='_blank'>박지원 (민주통합당)</a></cite>
+			<a href="/jwp615" class="url" target='_blank' id='twitter_anywhere'>@jwp615</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />69,468 </span></span>민주통합당 원내대표로 정권교체를 위해 저의 경험과 열정을 다바쳐 최선을 다하겠습니다. #mokpo</p>
+	</div>
+	<div class="information">
+		<strong>69,468</strong>
+		<span># 17</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">86,407</span>
+			<span>팔로잉 :</span>
+			<span class="count" >31,175</span>
+			<span>트윗 :</span>
+			<span class="count">6,728</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">3,594</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('hcroh','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1774293332/_____bigger.jpg" alt="hcroh" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('54119587');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/hcroh" target='_blank'>노회찬</a></cite>
+			<a href="/hcroh" class="url" target='_blank' id='twitter_anywhere'>@hcroh</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />66,325 </span></span>자유인, 문화인, 평화인</p>
+	</div>
+	<div class="information">
+		<strong>66,325</strong>
+		<span># 18</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">242,828</span>
+			<span>팔로잉 :</span>
+			<span class="count" >221,924</span>
+			<span>트윗 :</span>
+			<span class="count">13,952</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">12,449</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('gihos1','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/1673153145/____bigger.jpg" alt="gihos1" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('236443609');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/gihos1" target='_blank'>서기호</a></cite>
+			<a href="/gihos1" class="url" target='_blank' id='twitter_anywhere'>@gihos1</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />66,087 </span></span>19대 무소속 국회의원, 법사위 소속, 불의와 타협없는 사법개혁. 유전무죄 무전유죄 타파, 국민의 상식과 눈높이에 맞는 대인배 정치, 강한자에 강하고 약한자에 너그럽게. 공감, 연결, 소통하는 매력적인 진보</p>
+	</div>
+	<div class="information">
+		<strong>66,087</strong>
+		<span># 19</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">62,256</span>
+			<span>팔로잉 :</span>
+			<span class="count" >2,619</span>
+			<span>트윗 :</span>
+			<span class="count">4,056</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">1,928</span>
+		</div>
+	<div class="clear"></div>
+</div>
+<div class="stream">
+	<div class="avatar">
+		<a href="#" onclick="openLayer('hongshenx','', 'simple');return false;"><img src="http://a0.twimg.com/profile_images/395851348/h_bigger.jpg" alt="hongshenx" /></a>
+		<a href="javascript:void(0);" class="button" onclick="javascript:follow_user('71169230');"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_people_follow.gif" alt="팔로우"></a>
+	</div>
+	<div class="article">
+		<div class="header">
+			<cite><a href="/hongshenx" target='_blank'>홍세화 (진보신당)</a></cite>
+			<a href="/hongshenx" class="url" target='_blank' id='twitter_anywhere'>@hongshenx</a>
+		</div>
+		<p><span class="point"><span><img src="http://i.dreamwiz.com/img/twtkr/people/icon_p.gif"  class="icon" alt="" />65,216 </span></span>전에는 파리택시기사.  한겨레 기획위원.  르몽드디플로마띠끄 한국판 편집인.  학벌없는사회 공동대표   현재는 진보신당 대표 . 마포 민중의집 공동대표. </p>
+	</div>
+	<div class="information">
+		<strong>65,216</strong>
+		<span># 20</span>
+	</div>
+		<div class="footer">
+			<span>팔로워 :</span>
+			<span class="count">57,651</span>
+			<span>팔로잉 :</span>
+			<span class="count" >2,033</span>
+			<span>트윗 :</span>
+			<span class="count">1,430</span>
+			<span>리스트됨 :</span>
+			<span class="count" style="background:none;">3,084</span>
+		</div>
+	<div class="clear"></div>
+</div>					</div>
+					<ul class="paging">
+<li><span>1</span></li><li><a href="/fpl.php?d=3_1&s=&p=2&n=20">2</a></li><li><a href="/fpl.php?d=3_1&s=&p=3&n=20">3</a></li><li><a href="/fpl.php?d=3_1&s=&p=4&n=20">4</a></li><li><a href="/fpl.php?d=3_1&s=&p=5&n=20">5</a></li><li><a href="/fpl.php?d=3_1&s=&p=6&n=20">6</a></li><li><a href="/fpl.php?d=3_1&s=&p=7&n=20">7</a></li><li><a href="/fpl.php?d=3_1&s=&p=8&n=20">8</a></li><li><a href="/fpl.php?d=3_1&s=&p=9&n=20">9</a></li><li><a href="/fpl.php?d=3_1&s=&p=10&n=20">10</a></li><li class="btn btn_next"><a href="/fpl.php?d=3_1&s=&p=11&n=20"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_paging_next.gif" alt="" /></a></li>					</ul>
+				</div>
+			</div>
+			<!-- // ### window -->
+
+			<!-- ### sidebar -->
+<div id="sidebar" class="right_solo">
+				<div class="promotion">
+					<div class="pro_height">
+						<p id='default_ad01' style='display:block;'>
+<a href='#' onclick='AD_LAYER_COMMON_SCRIPT("AMS95","http://twtkr.olleh.com/event/twtkr_ad_info/","530","430","http://adcnt.dreamwiz.com/BIN/count?i/twtkr_twtkr_ad_info_2l","http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=twtkr_ad_info&save=100"); return false;' ><img src='http://i.dreamwiz.com/img/twtkr/event/event0818_twtkr_ad.jpg' alt='twtkr 광고소개서' title='twtkr 광고소개서' style='margin:-11px 0 0 -10px' /></a>
+<span id='cnt_link_d0' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_twtkr_ad_info_2l' /></span>
+<span id='ad_border_color_0' style='display:none;'>#DCEEF9</span>
+</a>
+</p>
+ 
+						<span id='ad_count' style='display:none;'>7</span>
+<p id='ad_0' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_adbox_n_253&save=100&http://blog.naver.com/gbnadri" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/ad/kbtour/img_121022.jpg' alt='경북관광 10월' title='경북관광 10월' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_0' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_253_2l' /></span></a></p>
+<p id='ad_1' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_adbox_n_260&save=100&http://adcdn.247realmedia.co.kr/adimg/CDN/2012-10/hdcapital_121001_banner_B_x11_hdcapital10_dream_twtkr_S.html" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/event/capital/161119_20121012.jpg' alt='현대 캐피탈 웹' title='현대 캐피탈 웹' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_1' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_260_2l' /></span></a></p>
+<p id='ad_2' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_adbox_n_262&save=100&http://dw.am/DpA" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/event/121030_premium_img.jpg' alt='프리미엄 토론' title='프리미엄 토론' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_2' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_262_2l' /></span></a></p>
+<p id='ad_3' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_adbox_n_248&save=100&http://share.twitkor.com" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/ad/talent_donation_120625.jpg' alt='재능 나눔' title='재능 나눔' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_3' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_248_2l' /></span></a></p>
+<p id='ad_4' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_adbox_n_255&save=100&http://j.mp/UDz7OR" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/event/premium/premium_120910.png' alt='twtkr 프리미엄' title='twtkr 프리미엄' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_4' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_255_2l' /></span></a></p>
+<p id='ad_5' style='display:none;'>	<a href='#' onclick='AD_LAYER_COMMON_SCRIPT("AMS193","http://twtkr.com/link/ams/ams_layer_ad.php?idx=193","578","525","http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_193_2l","http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_adbox_n_193&save=100"); return false;'  ><img src='http://i.dreamwiz.com/img/twtkr/event/img_missingchild121004.jpg' alt='실종아동찾기 0110' title='실종아동찾기 0110' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_5' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_193_2l' /></span></a></p>
+<p id='ad_6' style='display:none;'>	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ktucloud_0831&save=100&http://home.ucloud.olleh.com/main.kt" target="_blank"  ><img src='http://i.dreamwiz.com/img/twtkr/event/event0831_ucloud.jpg' alt='KT유클라우드' title='KT유클라우드' width='161' height='119' style='width:161px; height:119px; margin:-11px 0 0 -10px' /><span id='cnt_link_6' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ktucloud_0831_2l' /></span></a></p>
+<div style='display: none;' id='promotion_view_check'></div>
+<script type="text/javascript">
+//<![CDATA[
+	function AD_LAYER_COMMON_SCRIPT(layer_name,layer_src,layer_width,layer_height,view_url,click_url,fixed_height){
+		if(!fixed_height || fixed_height == ''){
+			fixed_height = 0;
+		}
+
+		var top_location = document.documentElement.scrollTop + document.body.scrollTop + 40;
+
+		if(layer_height == "0"){
+			if(top_location < 90){
+				layer_height = document.documentElement.clientHeight - 160;
+			}else{
+				layer_height = document.documentElement.clientHeight - (top_location + 70);
+			}
+		}
+
+		if(layer_src.indexOf('event_/') < 1){
+			document.getElementById('AD_LAYER_COMMON_CONTENT').innerHTML = '<div class="ad_iframe"><iframe frameborder="0" border="0" scrolling="no" id="AD_LAYER_COMMON_IFRAME" src="'+layer_src+'" width="'+String(layer_width)+'" height="'+String(layer_height)+'"></iframe></div>';
+		}else{
+			document.getElementById('AD_LAYER_COMMON_CONTENT').innerHTML = '<div class="ad_iframe"><iframe frameborder="0" border="0" id="AD_LAYER_COMMON_IFRAME" src="'+layer_src+'" width="'+String(layer_width)+'" height="'+String(layer_height)+'"></iframe></div>';
+		}
+
+		if(!document.getElementById('AD_LAYER_COMMON_DIV')){
+			var div = create_element("div","AD_LAYER_COMMON_DIV","layer_popup",null);
+			document.getElementsByTagName('body')[0].appendChild(div);
+		}
+
+		if(ieVision() == 'ie6' || ieVision() == 'ie7'){
+			document.getElementById('AD_LAYER_COMMON_DIV').style.width = Number(layer_width)+10+'px';
+		}
+
+		if(top_location < 90){
+			if(document.documentElement.clientHeight < ( Number(layer_height)+36 ) ){
+				top_location = 5;
+			}else if(document.documentElement.clientHeight < ( Number(layer_height)+90+36 ) ){
+				top_location = (document.documentElement.clientHeight - Number(layer_height) - 36) /2 ;
+			}else{
+				top_location = 90;
+			}
+		}else{
+			if(document.documentElement.clientHeight < ( Number(layer_height)+36 ) ){
+				top_location = top_location - 35;
+			}else if(document.documentElement.clientHeight < ( Number(layer_height)+90+36 ) ){
+				top_location = top_location - 40 + Number((document.documentElement.clientHeight - Number(layer_height) - 36) /2); ;
+			}
+		}
+
+		if(fixed_height > 0){
+			top_location = fixed_height;
+		}
+
+		if(document.getElementById('AD_LAYER_COMMON_NAME').innerHTML == layer_name && layer_name.indexOf('politician') < 0){
+			document.getElementById('AD_LAYER_COMMON_DIV').style.display="block";
+			document.getElementById('popup_background').style.display="block";
+			document.getElementById('AD_LAYER_COMMON_CONTENT').innerHTML = "";
+			document.getElementById('AD_LAYER_COMMON_DIV').style.top = String(top_location)+"px";
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.style.padding='0px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.parentNode.style.width=String( Number(layer_width)+10 )+'px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.parentNode.style.padding='0px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.style.overflow='hidden';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.style.height= String(layer_height)+'px';
+
+			document.getElementById('AD_LAYER_COMMON_CLICK').innerHTML = "<img src='"+view_url+"' />";
+			document.getElementById('AD_LAYER_COMMON_VIEW').innerHTML = "<img src='"+click_url+"' />";
+		}else{
+			document.getElementById('AD_LAYER_COMMON_DIV').style.dispaly="block";
+			document.getElementById('AD_LAYER_COMMON_DIV').innerHTML = popupLayoutAMS('AD_LAYER_COMMON_DIV','AD_LAYER_COMMON_CONTENT');
+			document.getElementById('AD_LAYER_COMMON_CONTENT').innerHTML = "";
+			popupCenterAMS(document.getElementById('AD_LAYER_COMMON_DIV'));
+			document.getElementById('AD_LAYER_COMMON_DIV').style.position = "absolute";
+			document.getElementById('AD_LAYER_COMMON_DIV').style.top = String(top_location)+"px";
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.style.padding='0px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.parentNode.style.width=String( Number(layer_width)+10 )+'px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.parentNode.parentNode.style.padding='0px';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.style.overflow='hidden';
+			document.getElementById('AD_LAYER_COMMON_IFRAME').parentNode.style.height= String(layer_height)+'px';
+			document.getElementById('AD_LAYER_COMMON_NAME').innerHTML = layer_name;
+			document.getElementById('AD_LAYER_COMMON_CLICK').innerHTML = "<img src='"+view_url+"' />";
+			document.getElementById('AD_LAYER_COMMON_VIEW').innerHTML = "<img src='"+click_url+"' />";
+		}
+	}
+
+	function popupLayoutAMS(id,content){
+		var ele ="";
+		var radius = "";
+		var cname ="layer_type1";
+		if (id == "kbs_newsline"){cname ="layer_type2"} //kbs 뉴스라인
+		ele+='<div class="popup_wrapper '+cname+'">';
+			ele+='<div class="header">';
+				ele+='<div class="radius_left"></div>';
+				ele+='<div class="radius_right"></div>';
+				ele+='<div class="radius_mid"></div>';
+			ele+='</div>';
+			ele+='<div class="popup_mid_wrapper">';
+				ele+='<div class="popup_mid">';
+					ele+='<div class="popup_content">'+document.getElementById(content).innerHTML+'</div>';
+				ele+='</div>';
+			ele+='</div>';
+			ele+='<div class="footer">';
+				ele+='<div class="radius_left"></div>';
+				ele+='<div class="radius_right"></div>';
+				ele+='<div class="radius_mid"></div>';
+			ele+='</div>';
+			ele+='<button type="button" class="popup_close" onmousedown="eleHide(\'popup_background\');eleHide(\''+id+'\')"></button>';
+		ele+='</div>';
+	   if (!document.getElementById('popup_background')){
+			var div = create_element("div","popup_background","popup_background",null);
+			document.getElementsByTagName('body')[0].appendChild(div);
+	   }
+	   else{
+		   document.getElementById('popup_background').style.display="block";
+	   }
+	   return ele;
+	}
+
+	function popupCenterAMS(o){
+		var posiX;
+		var posiY;
+		if (!document.getElementById('get_body_size')){		
+			var bodySize = create_element("div","get_body_size","get_body_size",null);
+			document.getElementsByTagName('body')[0].appendChild(bodySize);
+		}	
+		o.style.display="block";
+		posiY = document.getElementById('get_body_size').offsetHeight / 2 - o.offsetHeight /2;
+		posiX = document.getElementById('get_body_size').offsetWidth / 2 - o.offsetWidth / 2;
+		if (ieVision() && (ieVision() == 'ie6')){
+			posiY = ((document.getElementsByTagName('html')[0].offsetHeight / 2) - (o.offsetHeight /2))+(document.documentElement.scrollTop + document.body.scrollTop);				
+		}
+		o.style.top  = Math.floor(posiY)+"px";
+		o.style.left = Math.floor(posiX)+"px";
+		if(o.offsetHeight > document.getElementById('get_body_size').offsetHeight){
+			o.style.top="0px";
+			o.style.position="absolute";
+		}
+		if (o.offsetWidth > document.getElementById('get_body_size').offsetWidth){
+			o.style.left="0px";
+			o.style.position="absolute";
+		}
+		if (ieVision() && (ieVision() == 'ie6')){
+			if (document.getElementsByTagName('html')[0].offsetHeight > o.offsetHeight){
+				document.getElementsByTagName('html')[0].onscroll = function(){
+					document.getElementById('popup_background').style.height = document.getElementById('popup_background').offsetHeight+500+"px";
+					document.getElementById('popup_background').style.top = document.documentElement.scrollTop+document.body.scrollTop-250+"px";
+				}
+			}
+		}
+	}
+
+	var AMS_AD_LAYER_TWEET ={
+		layer :'twtkr_support', //레이어 아이디
+		design:'layer_type1 twtkr_support', //레이어 디자인 
+		type  :'type1',        //레이어 타입 
+		bg    :false,          //레이어 뒤 검은배경
+		init  : function(tit,str,count,updateurl,clickurl){
+			if(!count || count == ""){var count=140};
+			if(!updateurl || updateurl == ""){var updateurl=""};
+			if(!clickurl || clickurl == ""){var clickurl=""};
+			var first = str.indexOf("[$");
+			var last = str.indexOf("$]")-1;
+			var str = str.replace("[$","");
+			str = str.replace("$]","");
+			var html="";
+			layerDesign.init(tweetUpdate.layer,'layer_popup '+tweetUpdate.design,tweetUpdate.bg);
+			html += layerDesign.header(tweetUpdate.type);
+			html +='<div class="layer_title">';
+			html +='<h2><span >'+tit+'</span></h2>';
+			html +='</div>';
+			html +='<div class="twtkr_tweetUpdate_wrap">';
+
+			if(updateurl == ""){
+			    // 일반
+			    html +='<form target="ifrSection" action="http://twtkr.olleh.com/status/amsTweetStatus.php" method="post" name="layer_form">';
+			}else{
+			    // 업데이트따로
+			    html +='<form target="ifrSection" action="'+updateurl+'" method="post" name="layer_form">';			    
+			}
+
+			html +='<div class="textarea">';
+				html +='<textarea name="layer_tweet_text" onkeyup=\'textLengthCheck(this,"twtkr_tweetUpdate_count","ams_layer_tweet_btn",'+count+')\' id="twtkr_tweetUpdate_textarea" onclick="" rows="" cols="">'+str+'</textarea>';
+				html +='<input id="ams_layer_tweet_btn" type="image" alt="등록" src="http://i.dreamwiz.com/img/twtkr/people/btn_update.gif" onclick=\'document.getElementById("promotion_view_check").innerHTML = "<img src='+clickurl+' />";\' />';
+				html +='<span id="twtkr_tweetUpdate_count"></span>';
+			html +='</div>';
+			html +='</form>';
+
+			html +='</div>';
+			html += layerDesign.footer(tweetUpdate.type,tweetUpdate.layer,tweetUpdate.bg);
+			document.getElementById(tweetUpdate.layer).innerHTML=html;
+			popupCenter(document.getElementById(tweetUpdate.layer));
+			if (first != 0 && last != 0){
+				createSelection(first,last,document.getElementById('twtkr_tweetUpdate_textarea'));
+			}
+			document.getElementById('twtkr_tweetUpdate_count').innerHTML = 140-(str.length);
+			document.getElementById('twtkr_tweetUpdate_textarea').focus();
+		} 
+	}
+
+	function ams_follow(_page, _sub, _screen_name){
+		try{
+			new Ajax.Request('/link/ams/ams_layer_follow.php?page='+_page+'&sub='+_sub+'&screen_name='+_screen_name, {onSuccess:getAmsFollow});	
+		}catch(e){
+			try{
+				$.ajax({
+					url: '/link/ams/ams_layer_follow.php?page='+_page+'&sub='+_sub+'&screen_name='+_screen_name,
+					success: getAmsFollow
+				});
+			}catch(e){
+			}
+		}
+	}
+
+	function ams_retweet(_page, _sub, _retweet_id){
+		new Ajax.Request('/link/ams/ams_layer_retweet.php?page='+_page+'&sub='+_sub+'&retweet_id='+_retweet_id, {onSuccess:getAmsFollow});	
+	}
+
+	function getAmsFollow(res)
+	{	
+		if(res.responseText){
+			var retstr = res.responseText;
+		}else{
+			var retstr = res;
+		}
+		alert(retstr);
+	}
+
+
+//]]>
+</script>
+
+<div id="AD_LAYER_COMMON_CONTENT" style="display:none;"></div>
+<div id="AD_LAYER_COMMON_NAME" style="display:none;"></div>
+<div id="AD_LAYER_COMMON_CLICK" style="display:none;"></div>
+<div id="AD_LAYER_COMMON_VIEW" style="display:none;"></div>
+<div id="promotion_view_check" style="display:none;"></div>
+						<div class="controll" onmouseover= "ad_check=false" onmouseout="ad_check=true" >
+							<a href="#" onclick="promotion_ad(-1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_prev.gif" alt="" /></a>
+							<a href="#" onclick="promotion_ad(+1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_next.gif" alt="" /></a>
+						</div>
+					</div>
+				</div>
+                <div class="notice">
+					<ul class="notice_sub" id="notice_tab">
+						<li><a href="javascript:">twtkr스폰서</a></li>
+						<li class="on"><a href="javascript:">이벤트</a></li>
+					</ul>
+					<div class="notice_section">
+						<div id="contentPoll" style="display:none">
+							<span id='poll_count' style='display:none;'>6</span>
+<div class="ad_form01_wrap" id="poll_0" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/1156949178/1212_normal.jpg"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_41_1&save=100 />'; try{openLayer('bhpretty4u','명품코코성형외과');}catch(e){window.open('http://twtkr.com/bhpretty4u','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">명품코코성형외과</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_41_2&save=100&http://twtkr.com/bhpretty4u" target="_blank">@bhpretty4u</a>
+				지하철3호선&nbsp;압구정역5번출구&nbsp;스타벅스3층&nbsp;명품코&nbsp;코성형외과.
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_41_3','bhpretty4u'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_41_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_41_4&save=100&http://twtkr.com/bhpretty4u" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_0' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_41_2l' /></span>
+    </div>
+</div>
+<div class="ad_form01_wrap" id="poll_1" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/2216854816/phpMQUVaW_normal"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_34_1&save=100 />'; try{openLayer('findchild_kr','초록우산  어린이재단');}catch(e){window.open('http://twtkr.com/findchild_kr','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">초록우산<br> 어린이재단</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_34_2&save=100&http://twtkr.com/findchild_kr" target="_blank">@findchild_kr</a>
+				실종&nbsp;유괴&nbsp;&nbsp;예방&nbsp;사업을&nbsp;하는&nbsp;국내&nbsp;유일의&nbsp;전문사회복지기관
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_34_3','findchild_kr'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_34_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_34_4&save=100&http://twtkr.com/findchild_kr" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_1' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_34_2l' /></span>
+    </div>
+</div>
+<div class="ad_form01_wrap" id="poll_2" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/1186965541/symbol_normal.jpg"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_35_1&save=100 />'; try{openLayer('GB_tour','경북 관광 알림이');}catch(e){window.open('http://twtkr.com/GB_tour','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">경북 관광 알림이</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_35_2&save=100&http://twtkr.com/GB_tour" target="_blank">@GB_tour</a>
+				유용하고&nbsp;생생한&nbsp;경북지역의&nbsp;관광정보를&nbsp;제공해&nbsp;드리는&nbsp;경북&nbsp;관광^^
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_35_3','GB_tour'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_35_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_35_4&save=100&http://twtkr.com/GB_tour" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_2' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_35_2l' /></span>
+    </div>
+</div>
+<div class="ad_form01_wrap" id="poll_3" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/2747620085/fdb1b31913f7a66ef099de4d97ec3c29_normal.jpeg"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_40_1&save=100 />'; try{openLayer('julietclinic','줄리엣성형외과  분당점');}catch(e){window.open('http://twtkr.com/julietclinic','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">줄리엣성형외과 <br>분당점</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_40_2&save=100&http://twtkr.com/julietclinic" target="_blank">@julietclinic</a>
+				줄리엣&nbsp;성형네트워크&nbsp;분당(서현)점&nbsp;입니다~^^
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_40_3','julietclinic'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_40_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_40_4&save=100&http://twtkr.com/julietclinic" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_3' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_40_2l' /></span>
+    </div>
+</div>
+<div class="ad_form01_wrap" id="poll_4" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/1483702614/phpkmHCc6_normal"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_7_1&save=100 />'; try{openLayer('twtkr_mkt','twtkr 마케팅');}catch(e){window.open('http://twtkr.com/twtkr_mkt','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">twtkr<br />마케팅</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_7_2&save=100&http://twtkr.com/twtkr_mkt" target="_blank">@twtkr_mkt</a>
+				twtkr&nbsp;마케팅&nbsp;공식&nbsp;트위터&nbsp;담당자입니다.&nbsp;
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_7_3','twtkr_mkt'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_7_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_7_4&save=100&http://twtkr.com/twtkr_mkt" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_4' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_7_2l' /></span>
+    </div>
+</div>
+<div class="ad_form01_wrap" id="poll_5" style="display:none;">
+    <div class="ad_form01">
+        <img src="http://a0.twimg.com/profile_images/1597651473/php168zj5_normal"  class="ad_image" alt="" style="cursor:pointer;" onclick="document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_8_1&save=100 />'; try{openLayer('webtourlove','웹;투어');}catch(e){window.open('http://twtkr.com/webtourlove','_blank');}" />
+		   <table class="ad_screen_name" cellpadding="0" cellspacing="0"><tr><td valign="middle">웹;투어</td></tr></table>
+        <span class="ad_id">
+				<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_8_2&save=100&http://twtkr.com/webtourlove" target="_blank">@webtourlove</a>
+				감동을&nbsp;주는&nbsp;여행친구&nbsp;웹투어&nbsp;공식&nbsp;트위터&nbsp;입니다.
+        </span>
+        <div class="ad_button">
+            <a href="#" onclick="ams_follow('twtkr_mkt','ams_rf_n_8_3','webtourlove'); document.getElementById('poll_view_check').innerHTML = '<img src=http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_mkt&sub=ams_rf_n_8_3&save=100 />'; return false;"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_follow.gif" alt="팔로우" class="ams_follow_btn_img" /></a>
+            <a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_mkt&sub=ams_rf_n_8_4&save=100&http://twtkr.com/webtourlove" target="_blank"><img src="http://i.dreamwiz.com/img/twtkr/ad/ad_form01_link.gif" alt="바로가기" class="ams_link_btn_img" /></a>
+        </div>
+        <span id='poll_cnt_link_5' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_rf_n_8_2l' /></span>
+    </div>
+</div>
+<div style='display: none;' id='poll_view_check'></div>
+							<div class="controll" onmouseover="poll_check=false" onmouseout="poll_check=true" >
+								<a href="#" onclick="promotion_poll(-1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_prev.gif" alt="" /></a>
+								<a href="#" onclick="promotion_poll(+1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_next.gif" alt="" /></a>
+							</div>
+						</div> 
+						<div id="contentEvent"  style="display:block">
+							<p id="default_ad02" style="display:block;">
+								<a href="javascript:openWin('http://itunes.apple.com/us/app/twtkr/id352188596?mt=8');">
+									<strong>iPhone용 twtkr 앱</strong>
+									<span>아이폰에서 twtkr을 - twtkr for iPhone 앱을 무료로 사용해 보세요.</span>
+								</a>
+							</p>
+							<span id='event_count' style='display:none;'>4</span>
+<p id='event_0' style='display:none;'>
+	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_ad_event&sub=ams_adbox_n_261&save=100&http://dw.am/DpA" target="_blank"  >	<strong>[토론] 프리미엄 서비스</strong>
+	<span>twtkr 프리미엄 서비스 개선방안에 대한 의견을 구합니다.</span>
+	<span id='event_cnt_link_0' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_261_3l' /></span>
+	</a>
+</p>
+<p id='event_1' style='display:none;'>
+	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_ad_event&sub=ams_adbox_n_35&save=100&http://dw.am/P70F" target="_blank"  >	<strong>한국시리즈 우승팀은?</strong>
+	<span>2012 프로야구 한국시리즈 우승팀 어떻게 예상하세요?</span>
+	<span id='event_cnt_link_1' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_35_3l' /></span>
+	</a>
+</p>
+<p id='event_2' style='display:none;'>	<a href='#' onclick='AD_LAYER_COMMON_SCRIPT("AMS135","http://twtkr.com/event/twtkr_app_download/","500","430","http://adcnt.dreamwiz.com/BIN/count?i/twtkr_twtkr_iphone_app_3l","http://ebiz.dreamwiz.com/BIN/pi.cgi?page=twtkr_ad_event&sub=twtkr_iphone_app&save=100"); return false;'  ><img src='http://i.dreamwiz.com/img/twtkr/event/event0810_app.jpg' alt='twtkr 스마트 앱' title='twtkr 스마트 앱' width='161' height='119' style='width:161px; height:119px; margin:-8px 0 0 -8px' /><span id='event_cnt_link_2' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_twtkr_iphone_app_3l' /></span></a></p>
+<p id='event_3' style='display:none;'>
+	<a href="http://ebiz.dreamwiz.com/BIN/pl.cgi?page=twtkr_ad_event&sub=twtkr_people_rank&save=100&http://twtkr.olleh.com/find_people.php" target="_blank"  >	<strong>내 트위터는 순위는?</strong>
+	<span>twtkr 디렉토리에 내 트위터를 등록해 보세요.  @twtkr_dir</span>
+	<span id='event_cnt_link_3' style='display:none;'><img src='http://adcnt.dreamwiz.com/BIN/count?i/twtkr_twtkr_people_rank_3l' /></span>
+	</a>
+</p>
+<div style='display: none;' id='event_view_check'></div>							<div class="controll" onmouseover="event_check=false" onmouseout="event_check=true" >
+								<a href="#" onclick="promotion_event(-1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_prev.gif" alt="" /></a>
+								<a href="#" onclick="promotion_event(+1);return false" ><img src="http://i.dreamwiz.com/img/twtkr/btn_promotion_next.gif" alt="" /></a>
+							</div>
+						</div> 
+					</div>
+								<script type="text/javascript">
+					//<![CDATA[
+					      promotionTab(new Array("contentPoll","contentEvent"),0); //텝 이벤트
+					//]]>
+				</script>
+				</div>
+<script type="text/javascript">
+//<![CDATA[
+addLoadEvent(mainOnload);
+
+var ad_count = 5;
+var poll_count = 0;
+var event_count = 0;
+
+var ad_check = true;
+var poll_check =true;
+var event_check = true;
+
+//ad_box
+var ad_num = 0;
+var ad_before_num = 0;
+
+//poll_box
+var poll_num = 0;
+var poll_before_num = 0;
+
+//event_box
+var event_num = 0;
+var event_before_num = 0;		
+
+	
+function mainOnload(){	
+    document.getElementById("ad_0").style.display = "";			
+    ad_count = parseFloat($("ad_count").innerHTML);	
+
+    //poo&event		
+    document.getElementById("poll_0").style.display = "";	
+    document.getElementById("event_0").style.display = "";
+
+    poll_count = parseFloat($("poll_count").innerHTML);	
+    event_count = parseFloat($("event_count").innerHTML);	
+
+	//poo&event		
+	change_promotion();
+	setInterval(change_promotion,15000)
+}	
+
+function promotion_ad(count){
+    $("ad_"+ad_before_num).style.display = "none";
+    $("ad_"+ad_num).style.display = "block";
+	$("promotion_view_check").innerHTML = $("cnt_link_"+ad_num).innerHTML;     //추가
+    ad_before_num = ad_num;
+    ad_num =ad_num+count;
+    if (ad_num < 0){ad_num = 0;}
+    if(ad_num == ad_count){
+        ad_num = 0;
+    }
+}
+
+var promotion_poll_firstload = "1";
+function promotion_poll(count){
+	if($("contentPoll").style.display == "block" || promotion_poll_firstload == "1"){
+		$("poll_"+poll_before_num).style.display = "none";
+		$("poll_"+poll_num).style.display ="block";
+		$("poll_view_check").innerHTML = $("poll_cnt_link_"+poll_num).innerHTML;
+		poll_before_num = poll_num;
+		poll_num = poll_num+count;
+		if (poll_num < 0){poll_num = 0;}
+		if(poll_num == poll_count){
+			poll_num = 0;
+		}			
+		promotion_poll_firstload = "0";
+	}
+}
+var promotion_event_firstload = "1";
+function promotion_event(count){
+	if($("contentEvent").style.display == "block" || promotion_event_firstload == "1"){
+		$("event_"+event_before_num).style.display = "none";
+		$("event_"+event_num).style.display = "block";
+		$("event_view_check").innerHTML = $("event_cnt_link_"+event_num).innerHTML;
+		event_before_num = event_num;
+		event_num = event_num+count;
+		if (event_num < 0){event_num = 0;}
+		if(event_num == event_count){
+			event_num = 0;
+		}
+		promotion_event_firstload = "0";
+	}
+}
+
+function change_promotion(){
+    
+    var defaultAd01 = $('default_ad01');
+    var defaultAd02 = $('default_ad02');
+    if (defaultAd01 ){
+        if (defaultAd01.style.display == "block"){
+            defaultAd01.style.display="none";
+        }
+    }
+    if (defaultAd02 ){
+        if (defaultAd02.style.display == "block"){
+            defaultAd02.style.display="none";
+        }
+    }
+    if (ad_check == true){promotion_ad(+1);}
+    if (poll_check == true){promotion_poll(+1);}
+    if (event_check == true){promotion_event(+1);}
+}
+//]]>
+</script>
+<hr />
+<script type="text/javascript">
+//<![CDATA[
+function login_confirm()
+{
+	if(confirm('로그인 후 사용하실 수 있습니다. 로그인 하시겠습니까?'))
+	{
+		location.href='/login.php?ret_url=%2Ffpl.php%3Fd%3D3_1%26s%3D%26p%3D1';	
+	}
+}
+//]]>
+</script>
+
+<div class="box_type1">
+	<div class="box_wrapper">
+		<div class="lef"><a href="http://twtkr.olleh.com/twtkr_dir" target="_blank"><img src="http://api.twitter.com/1/users/profile_image/twtkr_dir.xml"></a></div>
+		<div class="rig">
+			<p><a href="http://twtkr.olleh.com/twtkr_dir" target="_blank">@twtkr_dir</a></p>
+			<a href="javascript:" onclick="login_confirm();"><img alt="&gt;팔로우" src="http://i.dreamwiz.com/img/twtkr/btn_prm_follow.gif"></a>
+			<a href="javascript:" onclick="login_confirm();" style="margin:0;"><img alt="&gt;문의하기" src="http://i.dreamwiz.com/img/twtkr/btn_support.gif"></a>
+		</div>
+	</div>
+</div>
+<!-- 디렉토리 추천-->
+<div class="button"><a href="#none" onclick="login_confirm();"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_enrool.png" alt="사람찾기 디렉토리에 등록하고 싶은 사용자를 추천해 주세요." /></a></div>
+<!--/ 디렉토리 추천-->
+<div class="dir_count">
+    <div class="dir_tit"><h2>디렉토리 등록 사용자</h2></div>
+    <div class="count_wrapper">
+        <div>
+            <span class="dir_num">
+8,992</span> <span class="dir_text">명</span>
+        </div>
+    </div>
+</div>
+<div class="button">
+	<a class="ranking_selection" onclick="showOpinionLayer('calculation_section');return false;" href="#none"><img alt="순위 산정 기준" src="http://i.dreamwiz.com/img/twtkr/people/btn_formula.gif"/></a>
+	<a class="dir_policy" onclick="showOpinionLayer('layer_dir_policy');$('layer_dir_policy').style.zIndex='100';return false;" href="#none"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_policy.gif" alt="디렉토리 등록 정책 "/></a>
+</div>
+
+
+				<div class="button">
+					<a href="http://j.mp/UDz7OR"><img src="http://i.dreamwiz.com/img/twtkr/btn_premium.png" /></a>
+				</div>
+
+<div style="dislpay:none;"></div>
+</div>
+
+		   <!-- // ### sidebar -->
+						
+		</div>
+		<!-- // ## container -->
+	
+		<hr />
+
+		<!-- ## footer -->
+		<div id="footer">
+			<address>
+				<span>(c)Since 2009 by DreamWiz (twtkr.com is not affiliated with Twitter, Inc.)<br />twtkr.com은 DreamWiz가 개발한 웹 기반의 트위터 클라이언트입니다.</span>			</address>
+		</div>
+		<!-- // ## footer -->
+
+		<br clear="both" />
+
+	</div>
+	<!-- // # tkContainer -->
+
+<script type="text/javascript">
+//<![CDATA[
+function check_comment_length()
+{
+    var count_obj = document.getElementById("textcount");
+    var comment_obj = document.getElementById("comment_textarea");
+//alert(comment_obj.value.length);
+//alert(count_obj.innerHTML);
+
+    remain_count = 140 - comment_obj.value.length;
+    if (remain_count >= 10)
+    {
+        count_obj.className = "a";
+        //count_obj.style.color = "#ccc";
+        document.getElementById("long_msg").style.display = "none";
+    }
+    else if (remain_count >= 0)
+    {
+        count_obj.className = "b";
+        //count_obj.style.color = "#5c0002";
+        document.getElementById("long_msg").style.display = "none";
+    }
+    else
+    {
+        count_obj.className = "c";
+        //count_obj.style.color = "#d40d12";
+        remain_count = comment_obj.value.length;
+        document.getElementById("long_msg").style.display = "block";
+    }
+    count_obj.innerHTML = remain_count;
+}
+
+function comment_submit()
+{
+    var text_obj = document.getElementById("comment_textarea");
+    var comment_content = text_obj.value.strip();
+
+
+    if (comment_content.length < 1)
+    {
+        alert("내용을 입력해주세요.");
+        return;
+    }
+
+var long_write_yn = 0;
+    var isLongText = "false";
+
+    if (comment_content.length > 140)
+    {
+        if (long_write_yn == 0)
+        {
+            alert("140자가 초과되었습니다. 긴글 등록을 원하시면 \"설정\"에서 긴글사용으로 변경하세요.");
+            return;
+        }
+        else
+        {
+            isLongText = "true";
+        }
+    }
+
+
+    //escaped_contents = comment_content;
+
+
+    comment_url = "/status/writeComment.php?isLongText=" + isLongText + "&contents=" + comment_content;
+
+    //alert(comment_url);
+
+///*
+    new Ajax.Request(comment_url,
+    {
+        onSuccess: function(transport)
+        {
+            if (200 == transport.status)
+            {
+                var response = transport.responseText || "no response text";
+                alert(response);
+				eleHide('layer_opinion');
+            }
+        },
+        onFailure: function(){ alert('Error!!') }
+    });
+
+//*/
+    return ;
+}	
+//]]>
+</script>
+<style>
+span.a{font-weight: bold;font-size: 18px;font-family: "Georgia";color: #ccc;  margin-left: ;}
+span.b{font-weight: bold;font-size: 18px;font-family: "Georgia";color: #5c0002; margin-left:0;}
+span.c{font-weight: bold;font-size: 18px;font-family: "Georgia";color: #d40d12; margin-left: 0;}
+</style>
+<div id="layer_opinion" style="display:none;position:fixed;z-index:999999" >
+    <div class="layer_opinion">
+        <h2>사용자 추천, 의견 등록 </h2>
+        <div class="section">
+            <p>디렉토리에 추천하고 싶은 사용자(본인, 타인) 또는 잘못된 부분에 대한 의견을 남겨주세요.(<span id="textcount" class="a">20</span>)</p>
+            <div class="textarea">
+                <div class="leftbg">
+                    <div><textarea id="comment_textarea" rows="0" cols="0" onkeyup="check_comment_length();">@twtkr_dir  </textarea></div>
+                </div>
+            </div>
+            <input class="opinion_update" type="image" src="http://i.dreamwiz.com/img/twtkr/people/btn_update.gif" alt="등록" onclick="comment_submit();"/>
+<div id="long_msg" style="clear:both;display:none;color:#d40d12;font-size:9pt;">※ 140자 초과되었습니다. 긴 글 등록을 원하시면 설정에서 긴글사용으로 변경하시면 됩니다.</div>
+        </div>
+        <a href="#none" onclick="eleHide('layer_opinion')" class="layer_close"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_layer_close.gif" alt=""/></a>
+    </div>
+</div>
+<!-- 디렉토리 카테고리별 등록 정책 -->
+<div id="layer_dir_policy" class="calculation_section" style="position:absolute;display:none;">
+    <h2>디렉토리 카테고리별 등록 정책</h2>
+    <div class="calculation_article">
+        <table cellspacing="0" cellpadding="0" class="table_form1">
+        <caption>디렉토리 카테고리별 등록 정책</caption>
+        <colgroup>
+            <col width="130">
+            <col width="*">
+        </colgroup>
+        <tbody>
+            <tr>
+                <th>디렉토리</th>
+                <th>등록 정책</th>
+            </tr>
+            <tr>
+                <td>연예인</td>
+                <td> 연예인으로 확인이 되는 트위터</td>
+           </tr>
+           <tr>
+                <td>스포츠 </td>
+                <td>스포츠선수/구단으로 확인이 되는 트위터</td>
+            </tr>
+            <tr>
+                <td>정치인/공직자 </td>
+                <td>자신의 소속과 실명이 확인이 가능한 트위터</td>
+           </tr>
+           <tr>
+                <td>기업인/CEO </td>
+                <td>기업을 운영중거나(상장기업), 검색사이트에서 검색이 되는 임원직 트위터</td>
+            </tr>
+            <tr>
+                <td>전문가 </td>
+                <td>해당 분야에서 인지도가 있고, 관련 내용으로 트윗을 하며 검색사이트에서 검색/실명 확인이 가능한 트위터</td>
+            </tr>
+            <tr>
+                <td>미디어 </td>
+                <td>미디어 매체에서 종사중이거나 미디어 방송/매체로 확인이 되는 트위터</td>
+            </tr>
+            <tr>
+                <td>기업 </td>
+                <td>홈페이지/대표전화/사업자번호(주)가 확인이 가능하며, 해당 기업 공식 트위터</td>
+            </tr>
+            <tr>
+                <td>기관/단체 </td>
+                <td>홈페이지가 확인이 가능하며, 해당 기관/단체 공식 트위터</td>
+            </tr>
+            <tr>
+                <td>작가/출판사 </td>
+                <td>집필한 저서가 있는 작가, 출판업체 공식트위터</td>
+            </tr>
+            <tr>
+                <td>학교/대학교 </td>
+                <td>학교 공식 트위터, 현재 교직에 재직중인 교직원 트위터</td>
+            </tr>
+            <tr>
+                <td>엔터테인먼트 </td>
+                <td>영화감독/영화배급사/영화제작사, 공연장/영화관 등 공식 트위터</td>
+            </tr>
+            <tr>
+                <td>생활/문화서비스 </td>
+                <td>  상호명이 명시되어 있는 해당 공식 트위터</td>
+            </tr>
+            <tr>
+                <td>개인전문사업 </td>
+                <td>개인사업자로 확인이 되는 트위터</td>
+            </tr>
+            <tr>
+                <td>종교/종교인 </td>
+                <td>현직 종교인 트위터</td>
+            </tr>
+            <tr>
+                <td>팬클럽/커뮤니티 </td>
+                <td>팬클럽/동호회/모임 트위터</td>
+            </tr>
+            <tr>
+                <td>트위터 서비스 </td>
+                <td>트위터를 이용한 서비스를 제공하는 사이트/트위터</td>
+            </tr>
+            <tr>
+                <td>인기/유명 트위터 </td>
+                <td>디렉토리 순위산정 기준으로 10,000점 이상인 트위터</td>
+            </tr>
+            <tr>
+                <td>활동 많은 트위터 </td>
+                <td>디렉토리 순위산정 기준으로 3,000점~9,999점/follower 10,000명/listed 100/tweet 10,000개 이상인 트위터</td>
+            </tr>
+        </tbody>
+    </table>
+	<p class="txt02" style="color:#E23940;font-size:12px;"><strong>※프로필 이미지가 등록되어 있지 않은 계정은 등록할 수 없습니다.</strong></p>
+    </div>
+    <img alt="" class="ranking_pop_btm" src="http://i.dreamwiz.com/img/twtkr/people/bg_ranking_pop_btm.gif">
+    <a class="layer_close" onclick="eleHide('layer_dir_policy')" href="#none"><img alt="" src="http://i.dreamwiz.com/img/twtkr/people/btn_layer_close.gif"></a>
+</div>
+<!-- //디렉토리 카테고리별 등록 정책 -->
+<div class="calculation_section" id="calculation_section" style="display:none;position:fixed;z-index:10000">
+    <h2>순위 산정기준</h2>
+    <div class="calculation_article">
+        <p class="txt01"><strong>순위 산정에 사용되는 point는 아래 수식에 의해 계산됩니다.</strong></p>
+        <p class="txt04"><strong>point = <span>(followers - following) + (listed * 3) + following_point  + tweets_point </span></strong>
+        <p class="txt02">* tweets_point 는 tweets 수에 따라 달라지며 아래 기준에 의해 계산됩니다. <br>
+        * following_point 는 아래 수식에서 tweets 대신 following을 사용하여 계산됩니다. </p>
+        <table cellpadding="0" cellspacing="0" class="ranking_calculation" summary="tweets 수,tweets_point 계산 방법">
+            <caption>순위 산정 기준</caption>
+            <thead>
+            <tr>
+                <th>tweets 수</th>
+                <th style="border-right:0;">tweets_point 계산 방법</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>0 ~ 10,000</td>
+                <td style="border-right:0;">tweets/10</td>
+            </tr>
+            <tr>
+                <td>10,001 ~ 20,000</td>
+                <td style="border-right:0;">1,000 + ((( tweets - 10,000 ) / 10) * 0.9)</td>
+            </tr>
+            <tr>
+                <td>20,001 ~ 30,000</td>
+                <td style="border-right:0;">1,900 + ((( tweets - 20,000 ) / 10) * 0.8)</td>
+            </tr>
+            <tr>
+                <td>30,001 ~ 40,000</td>
+                <td style="border-right:0;">2,700 + ((( tweets - 30,000 ) / 10) * 0.7)</td>
+            </tr>
+            <tr>
+                <td>40,001 ~ 50,000</td>
+                <td style="border-right:0;">3,400 + ((( tweets - 40,000 ) / 10) * 0.6)</td>
+            </tr>
+            <tr>
+                <td>50,001 ~ 60,000</td>
+                <td style="border-right:0;">4,000 + ((( tweets - 50,000 ) / 10) * 0.5)</td>
+            </tr>
+            <tr>
+                <td>60,001 ~ 70,000</td>
+                <td style="border-right:0;">4,500 + ((( tweets - 60,000 ) / 10) * 0.4)</td>
+            </tr>
+            <tr>
+                <td>70,001 ~ 80,000</td>
+                <td style="border-right:0;">4,900 + ((( tweets - 70,000 ) / 10) * 0.3)</td>
+            </tr>
+            <tr>
+                <td>80,001 ~ 90,000</td>
+                <td style="border-right:0;">5,200 + ((( tweets - 80,000 ) / 10) * 0.2)</td>
+            </tr>
+            <tr>
+                <td>90,001 ~ ∞</td>
+                <td style="border-right:0;">5,400 + ((( tweets - 90,000 ) / 10) * 0.1)</td>
+            </tr>
+            </tbody>
+            </thead>
+        </table>
+    </div>
+    <img src="http://i.dreamwiz.com/img/twtkr/people/bg_ranking_pop_btm.gif" class="ranking_pop_btm" alt="" />
+    <a href="#none" onclick="eleHide('calculation_section')" class="layer_close"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_layer_close.gif" alt=""/></a>
+</div>
+<div id="listsBox" class="follow_menu_box" style="z-index:11111;display:none;">
+	<ol id="listsBoxLists"><img src="http://i.dreamwiz.com/img/twtkr/img/loading.gif"/></ol>
+</div>
+<!-- 디렉토리 등록 레이어-->
+<script type="text/javascript" src="/find_people/rcm_user.js.php"></script>
+<script type="text/javascript">
+//<![CDATA[
+    function innerRecomd(self){
+        if(self.value != "")
+		{
+			document.getElementById('msg_self').style.display="none";
+			document.getElementById('msg_rec').style.display="block";
+            document.getElementById('recom_id').innerHTML=self.value.replace("@","");
+        }
+		else
+		{
+			document.getElementById('msg_rec').style.display="none";
+			document.getElementById('msg_self').style.display="block";
+        }
+    }
+//]]>
+</script>
+<div style="display: none; position: fixed; z-index: 10000; left: 690px; top: 100px;" id="layer_rec" class="calculation_section">
+    <h2>디렉토리 사용자 등록 신청 / 추천</h2>
+    <div class="calculation_article">
+
+<table cellspacing="0" cellpadding="0" class="table_form1">
+    <caption>디렉토리 사용자 등록 신청 / 추천</caption>
+    <colgroup>
+        <col width="100">
+        <col width="*">
+    </colgroup>
+    <tbody>
+    <tr>
+        <th>트위터 ID</th>
+        <td><span class="twitter_id"></span></td>
+    </tr>
+    <tr>
+        <th>추천할 ID</th>
+        <td>
+            <input id="rec_sn" type="text" value="" class="input_text" onkeyup="innerRecomd(this)" />
+            <input id="self_sn" type="hidden" value="" />
+            <p class="guide">※ 본인이 아닌 다른 사용자를 추천할 경우, 추천할 사용자의 아이디를 입력해주세요.</p>
+        </td>
+    </tr>
+    <tr>
+        <th>디렉토리</th>
+        <td>
+			<select id="rec_d1" style="width:180px;" onchange="change_sub_dir(this.value);">
+                <option selected="selected" value="99">전체 (해당 디렉토리 없음)</option>
+            </select>
+            <select id="rec_d2" style="width:180px;display:none;" disabled="disabled">
+                <option value="">하위 없음</option>
+            </select>
+			<a class="dir_policy" onclick="showOpinionLayer('layer_dir_policy');$('layer_dir_policy').style.zIndex='11000'; return false" href="#none"><img src="http://i.dreamwiz.com/img/twtkr/people/btn_dir_info.gif" alt="디렉토리 등록 정책"/></a>
+        </td>
+    </tr>
+    <tr>
+        <th>신청/추천 사유</th>
+        <td>
+            <textarea id="rec_desc" cols="70" rows="5"></textarea>
+            <p class="guide">※ 실명이나 상호명 등을 기재하여 설명해주시면 등록 처리에 많은 도움이 됩니다.</p>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="recome_footer">
+    <p style="color:#e5574e;">
+       <label>
+            <input id="mention_check" type="checkbox" checked="checked">
+            <span>디렉토리 담당자에게 신청 트윗글을 자동으로 보냅니다.</span>
+       </label>
+    </p>
+    <p id="msg_self" class="txt2" style="display:block;">@twtkr_dir twtkr 디렉토리 서비스에 등록 신청합니다.</p>
+    <p id="msg_rec" class="txt2" style="display:none;">@twtkr_dir twtkr 디렉토리 서비스에 '<strong>@<span id="recom_id"></span>'</strong> 님을 등록 추천합니다.</p>
+</div>
+<div class="recome_button"><input type="image" onclick="check_rec_input();" value="등록" src="http://i.dreamwiz.com/img/twtkr/people/btn_people_reg.gif"></div>
+</div>
+    <img alt="" class="ranking_pop_btm" src="http://i.dreamwiz.com/img/twtkr/people/bg_ranking_pop_btm.gif">
+    <a class="layer_close" onclick="eleHide('layer_rec')" href="#none"><img alt="" src="http://i.dreamwiz.com/img/twtkr/people/btn_layer_close.gif"></a>
+</div>
+<script type="text/javascript">init_rec_d1();</script>
+
+    
+<!-- 디렉토리 등록 레이어-->
+<!-- personal information -->
+<div id="personalInformation" class="info_box">
+	<h2 id="piMove">사용자 정보</h2>
+	<div id="userInfoMove" class="info_cont">
+		
+	</div>
+</div>
+<!-- // personal information -->
+<!--personal information loading -->
+<div id="personalLoading" class="info_box">
+	<h2>Loading...</h2>
+	<ul>
+		<li class="loading">
+			<img src="http://i.dreamwiz.com/img/twtkr/img/loading.gif" alt="loading..." />
+		<li class="close_btn"><a href="#personalInformation" onclick="closeElement('personalInformation');return false;">X</a></li>
+	</ul>
+</div>
+<!-- loading -->
+<script type="text/javascript">
+  twttr.anywhere(function (T) {
+    T("#twitter_anywhere").hovercards({ linkify: false, expanded: true, infer: true });
+  });
+</script>
+<script language="JavaScript" type="text/javascript" src="http://cfm.olleh.com/adobe/s_code.js"></script>
+<script type="text/javascript">
+<!--	
+   s.pageName = "^www^EXT-twtkr";
+   s.eVar11="T";
+   var s_code=s.t();if(s_code)document.write(s_code);
+-->
+</script>
+<div style="margin:0px; padding:0px;" id="service_log_div"><img src="http://adcnt.dreamwiz.com/BIN/count?i/twtkr_servicelog_dir_1" border="0" width="0" height="0" /></div>
+<div style="margin:0px; padding:0px; display:none;"><img src="http://adcnt.dreamwiz.com/BIN/count?i/twtkr_ams_adbox_n_220_2l" /><img src="http://i.dreamwiz.com/img/twtkr/img/loading.gif" border="0" onload="try{document.getElementById('radio21_iframe').src='http://www.radio21.tv/new0904/radio21_linkout_161_119.php'; document.getElementById('radio21_iframe').style.display=''; document.getElementById('radio21_loading_img').style.display='none'; }catch(e){}" /></div>
+</body>
+</html>
