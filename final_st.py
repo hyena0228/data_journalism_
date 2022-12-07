@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as pl
 import seaborn as sb
 import altair as alt
 from bs4 import BeautifulSoup
@@ -16,6 +15,8 @@ from nltk import Text
 from matplotlib import font_manager, rc
 
 import openpyxl
+import sklearn
+
 
 @st.cache(allow_output_mutation=True)
 def load_excel(filename):
