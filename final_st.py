@@ -10,8 +10,6 @@ import altair as alt
 import json
 from pprint import pprint
 
-from konlpy.tag import Okt
-from nltk import Text
 
 
 import openpyxl
