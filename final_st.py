@@ -30,6 +30,9 @@ def load_csv(filename):
 st.subheader("대한민국은 안전한 나라인가?")
 
 st.subheader("이상기후, 국민들의 안전을 위협하다")
+st.write("⦁ 지난 여름 서울과 포항에 물난리가 덮쳤다.")
+st.write("⦁ 각각 8월, 9월 초 뉴스 헤드라인을 뜨겁게 달궜다.")
+
 
 ##서울공화국
 st.subheader("서울공화국")
