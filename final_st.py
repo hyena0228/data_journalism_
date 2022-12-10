@@ -110,7 +110,7 @@ st.table(harm)
 rain_2022 = load_excel("2022 강수.xlsx")
 
 rain_2022.index = ["2022년 일일강수량 합"]
-rain_20022 = pd.DataFrame({"서울": [1770], "포항": [1055]})
+rain_2022 = pd.DataFrame({"서울": [1770], "포항": [1055]})
 #rain_2022.columns = []
 st.bar_chart(rain_2022)
 
