@@ -108,7 +108,8 @@ st.table(harm)
 
 #올 여름 서울과 포항 호우 관련 데이터 확인
 rain_2022 = load_excel("2022 강수.xlsx")
-
+rain_2022.index = ["서울", "포항"]
+rain_2022.columns = ["2022년 일일강수량 합"]
 st.bar_chart(rain_2022)
 
 
