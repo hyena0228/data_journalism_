@@ -124,8 +124,8 @@ st.subheader("서울, 포항 얼마만큼 집중호우에 준비해왔는가?")
 st.write("⦁ 장마기간 서울과 포항 호우 데이터")
 ur = load_csv("usual_rain.csv")
 day_max = ur[["일일 강수량 1st"]]
-day_max.index = ["서울", "포항"]
-day_max.columns = ["최대 일일강수량"]
+day_max.index = ["최대 일일강수량"]
+
 
 st.bar_chart(day_max, height = 250, use_container_width=True)
 
