@@ -166,23 +166,13 @@ st.write("그러나 포항은 한번 비가 올 때, 많이 오는 편이었다.
 #배수데이터
 
 st.write("⦁ 서울과 포항 배수 데이터")
-SeoulBaesuPump = pd.read_csv("SeoulBaesuPump.csv", encoding='cp949')
 
-SBP_main = SeoulBaesuPump[["시설관리자", "배수장_최대배수량"]]
-SBP_main = SBP_main.groupby('시설관리자').sum('배수장_최대배수량')
-SBP_main = SBP_main.sort_values('배수장_최대배수량')
-#st.write(SBP_main.sort_values('배수장_최대배수량'))
+bpbp = pd.DataFrame(data = [31713.8, 9793], index = ["서울", "포항"], columns = ["배수장 최대배수량"]) #csv 파일에서 숫자만 뽑아왔습니다
 
+st.bar_chart(bpbp, height = 500, use_container_width=True)
 
-
-PohangBaesuPump = pd.read_csv("PohangBaesuPump.csv", encoding='cp949')
-PBP_main = PohangBaesuPump[['시군', '처리능력']]
-PBP_main = PBP_main.groupby('시군').sum('처리능력')
-PBP_main.columns = ["배수장_최대배수량"]
-
-bp_result = pd.concat([SBP_main, PBP_main])
-
-st.bar_chart(bp_result, height = 500, use_container_width=True)
+bs = pd.DataFrame(data = [2254620, 99813], index = ["서울", "포항"], columns = ["배수지 시설용량"])
+st.bar_chart(bs, height = 500, use_container_width=True)
 
 SeoulBaesu = pd.read_excel("SeoulBaesu.xlsx", thousands = ',')
 SB_main = SeoulBaesu[['배수위치', '시설용량(㎥/일)']]
