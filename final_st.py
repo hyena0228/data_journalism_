@@ -174,25 +174,6 @@ st.bar_chart(bpbp, height = 500, use_container_width=True)
 bs = pd.DataFrame(data = [2254620, 99813], index = ["서울", "포항"], columns = ["배수지 시설용량"])
 st.bar_chart(bs, height = 500, use_container_width=True)
 
-SeoulBaesu = pd.read_excel("SeoulBaesu.xlsx", thousands = ',')
-SB_main = SeoulBaesu[['배수위치', '시설용량(㎥/일)']]
-SB_main = SB_main.dropna(axis = 0)
-SB_main['시설용량(㎥/일)'] = SB_main['시설용량(㎥/일)'].apply(pd.to_numeric)
-SB_main = SB_main.groupby('배수위치').sum('시설용량(㎥/일)')
-SB_main = SB_main.sort_values('시설용량(㎥/일)')
-
-
-
-
-PohangBaesu = pd.read_excel("PohangBaesu.xlsx", thousands = ',')
-PB_main = PohangBaesu[['배수위치', '시설용량(㎥/일)']]
-PB_main = PB_main.dropna(axis = 0)
-PB_main['시설용량(㎥/일)'] = PB_main['시설용량(㎥/일)'].apply(pd.to_numeric)
-PB_main = PB_main.groupby('배수위치').sum('시설용량(㎥/일)')
-
-
-b_result = pd.concat([SB_main, PB_main])
-st.bar_chart(b_result, height = 500, use_container_width=True)
 
 
 
